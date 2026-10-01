@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Popcorn Language Case Study</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (about 66 characters) with wider "stage" blocks for the interactive product panels. */
+:root {
+  --bg: #f5f7fb;
+  --surface: #ffffff;
+  --ink: #14213a;
+  --muted: #56657f;
+  --line: #d9e0ec;
+  --kernel: #f2a900;
+  --kernel-soft: #fff0c2;
+  --kernel-ink: #6b4a00;
+  --blue: #2a63d6;
+  --good: #1b7f45;
+  --bad: #b9342a;
+  --stage: #e9eef7;
+
+  /* Product panels keep the product's own light palette in both themes. */
+  --ui-bg: #ffffff;
+  --ui-ground: #f8fafc;
+  --ui-ink: #1e293b;
+  --ui-text: #475569;
+  --ui-muted: #64748b;
+  --ui-line: #e2e8f0;
+  --ui-blue: #2563eb;
+  --ui-blue-soft: #dbeafe;
+  --ui-amber-bg: #fffbeb;
+  --ui-amber-line: #fde68a;
+  --ui-amber-ink: #b45309;
+  --ui-amber: #d97706;
+  --ui-red: #dc2626;
+  --ui-green: #16a34a;
+
+  --display: "Bricolage Grotesque", "Avenir Next", "PingFang SC", "Apple SD Gothic Neo", sans-serif;
+  --body: "Instrument Sans", -apple-system, "Segoe UI", "PingFang SC", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1626; --surface: #172238; --ink: #e8eef9; --muted: #9dabc5; --line: #2b3956;
+    --kernel: #ffc233; --kernel-soft: #3b3010; --kernel-ink: #ffe29a; --blue: #86b3ff;
+    --good: #62d08e; --bad: #ff8d80; --stage: #111c30; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1626; --surface: #172238; --ink: #e8eef9; --muted: #9dabc5; --line: #2b3956;
+  --kernel: #ffc233; --kernel-soft: #3b3010; --kernel-ink: #ffe29a; --blue: #86b3ff;
+  --good: #62d08e; --bad: #ff8d80; --stage: #111c30; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+a { color: var(--blue); }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.12; text-wrap: balance; margin: 0; }
+p { margin: 0; }
+
+.wrap { padding-inline: 20px; }
+.col { max-width: 700px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
+.wide { max-width: 1000px; margin-inline: auto; }
+
+/* top bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 1000px; margin-inline: auto; padding: 8px 20px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.bar nav { display: flex; gap: 16px; overflow-x: auto; min-width: 0; font-size: 14px; }
+.bar nav a { color: var(--muted); text-decoration: none; white-space: nowrap; padding-block: 4px; }
+.bar nav a:hover { color: var(--ink); }
+.loc { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); flex-wrap: wrap; }
+.seg button { border: 0; background: none; border-radius: 999px; padding: 4px 12px; font-size: 13px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* hero */
+.hero { padding-block: 44px 28px; }
+.hero-in { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+.hero-txt { flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: clamp(42px, 8vw, 78px); font-weight: 800; letter-spacing: -.03em; }
+h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--kernel) 62%, var(--kernel) 92%, transparent 92%); }
+.lede { font-size: 20px; line-height: 1.45; max-width: 34em; }
+.hero img { flex: 0 0 auto; width: 190px; height: auto; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border-top: 1px solid var(--line); margin-top: 8px; }
+.facts div { padding: 12px 12px 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.facts dt { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.facts dd { margin: 2px 0 0; }
+dl { margin: 0; }
+
+section { padding-block: 44px; border-top: 1px solid var(--line); scroll-margin-top: 60px; }
+h2 { font-size: clamp(28px, 4.6vw, 40px); font-weight: 700; letter-spacing: -.02em; }
+h3 { font-size: 20px; font-weight: 700; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.key { font-family: var(--mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+
+/* simple tables */
+.tscroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); }
+th { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td strong { font-weight: 600; }
+
+.question { font-family: var(--display); font-size: clamp(22px, 3.4vw, 28px); font-weight: 500; line-height: 1.25; border-left: 6px solid var(--kernel); padding-left: 18px; text-wrap: balance; }
+
+.three { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px; }
+.three > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.three p { font-size: 15.5px; }
+
+/* stage: holds a product panel and its notes */
+.stage { background: var(--stage); border-radius: 18px; padding: 18px; margin-top: 26px; }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.steps button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--muted); display: inline-flex; gap: 8px; align-items: baseline; }
+.steps button b { font-family: var(--mono); font-weight: 500; font-size: 12px; }
+.steps button[aria-selected="true"] { background: var(--kernel); border-color: var(--kernel); color: #231a00; }
+.pane { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 760px) { .pane { grid-template-columns: minmax(0, 1fr); } }
+.notes { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.notes p { font-size: 15.5px; }
+.notes .flag { border-left: 3px solid var(--bad); padding-left: 10px; font-size: 14.5px; }
+.notes .flag b { color: var(--bad); }
+.stepnav { display: flex; justify-content: space-between; margin-top: 16px; gap: 8px; }
+.ghost { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+.ghost:disabled { opacity: .4; cursor: default; }
+.caption { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+/* product panel */
+.ui { background: var(--ui-ground); color: var(--ui-text); border-radius: 14px; border: 1px solid var(--ui-line); padding: 16px; font-family: -apple-system, "Segoe UI", Roboto, "PingFang SC", "Apple SD Gothic Neo", sans-serif; font-size: 14px; line-height: 1.5; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.ui h4 { margin: 0; font: 600 18px/1.3 inherit; font-family: inherit; color: var(--ui-ink); }
+.ui .sub { color: var(--ui-muted); font-size: 13px; }
+.ui .card { background: var(--ui-bg); border: 1px solid var(--ui-line); border-radius: 8px; padding: 14px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); min-width: 0; }
+.ui .field { border: 1px solid var(--ui-line); background: var(--ui-bg); border-radius: 8px; padding: 9px 12px; color: var(--ui-muted); overflow-wrap: anywhere; }
+.ui .field.bad { border-color: var(--ui-red); }
+.ui .err { color: var(--ui-red); font-size: 12.5px; margin-top: -6px; }
+.ui .btn { background: var(--ui-blue); color: #ffffff; border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 500; text-align: center; }
+.ui .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.ui .grow { flex: 1 1 140px; min-width: 0; }
+.ui label { font-size: 12px; color: var(--ui-muted); display: block; margin-bottom: 4px; }
+.ui select { font: inherit; color: var(--ui-ink); background: var(--ui-bg); border: 1px solid var(--ui-line); border-radius: 8px; padding: 8px 10px; width: 100%; color-scheme: light; }
+.ui .pill { display: inline-block; background: var(--ui-blue-soft); color: var(--ui-blue); border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: 600; }
+.ui .hint { font-size: 12.5px; color: var(--ui-muted); }
+.ui .tabs { display: flex; gap: 14px; border-bottom: 1px solid var(--ui-line); overflow-x: auto; }
+.ui .tabs span { padding: 6px 0; white-space: nowrap; font-size: 13px; color: var(--ui-muted); }
+.ui .tabs span.on { color: var(--ui-blue); border-bottom: 2px solid var(--ui-blue); font-weight: 600; }
+.ui .thumbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.ui .thumb { border-radius: 8px; aspect-ratio: 16 / 9; max-width: 100%; display: flex; align-items: flex-end; padding: 8px; color: #ffffff; font-size: 12px; font-weight: 600; line-height: 1.25; }
+.ui .th1 { background: #b4532a; } .ui .th2 { background: #2d5f8a; } .ui .th3 { background: #3f7d58; }
+.ui .gen { background: var(--ui-bg); border: 1px solid var(--ui-blue-soft); border-radius: 8px; padding: 8px 12px; font-size: 12px; }
+.ui .gen .top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.ui .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ui-blue); margin-right: 6px; animation: pulse 1.4s ease-in-out infinite; }
+.ui .track { height: 6px; background: var(--ui-line); border-radius: 99px; overflow: hidden; }
+.ui .track i { display: block; height: 100%; background: var(--ui-blue); border-radius: 99px; transition: width .5s ease-out; }
+.ui .banner { background: var(--ui-amber-bg); border: 1px solid var(--ui-amber-line); color: var(--ui-amber-ink); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.ui .banner span { flex: 1 1 200px; min-width: 0; }
+.ui .banner b { background: var(--ui-amber); color: #ffffff; border-radius: 6px; padding: 4px 10px; font-weight: 500; white-space: nowrap; }
+.ui .skel { height: 10px; border-radius: 6px; background: var(--ui-line); margin-top: 8px; animation: pulse 1.4s ease-in-out infinite; }
+.ui .x-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.ui .x-term { color: var(--ui-blue); font-weight: 600; font-size: 15px; }
+.ui .x-lab { font-size: 12px; color: var(--ui-muted); font-weight: 600; }
+.ui .x-eg { background: var(--ui-ground); border-radius: 6px; padding: 8px; font-style: italic; margin-top: 4px; }
+.ui .bag { border: 1px solid var(--ui-line); background: var(--ui-bg); color: var(--ui-ink); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; white-space: nowrap; flex: 0 0 auto; }
+.ui .bag[aria-pressed="true"] { background: var(--ui-green); border-color: var(--ui-green); color: #ffffff; }
+.ui .bag:disabled { color: var(--ui-muted); cursor: not-allowed; }
+.ui .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.ui .stat b { display: block; font-size: 20px; color: var(--ui-ink); font-variant-numeric: tabular-nums; }
+.ui .empty { text-align: center; padding: 18px 8px; }
+.ui .empty b { display: block; color: var(--ui-ink); font-size: 15px; margin-bottom: 4px; }
+.ui .x-b { font-weight: 600; }
+.ui .segs { display: flex; gap: 8px; flex-wrap: wrap; }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .ui .dot, .ui .skel { animation: none; } .ui .track i { transition: none; } }
+
+/* voice */
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 0 34px; margin-top: 22px; }
+.principle { padding-block: 20px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.principle h3 span { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--muted); margin-right: 8px; }
+.principle p { font-size: 15.5px; }
+.dd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; font-size: 15px; }
+.dd dt { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding-top: 4px; }
+.dd dd { margin: 0; }
+.dd .do { color: var(--good); } .dd .dont { color: var(--bad); }
+.dd dd.q { font-weight: 500; }
+
+.dial-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+.meter { display: inline-flex; gap: 4px; }
+.meter i { width: 26px; height: 10px; border-radius: 3px; background: var(--line); }
+.meter i.on { background: var(--kernel); }
+.dial-label { font-family: var(--display); font-weight: 700; font-size: 18px; }
+.samples { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.samples li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
+.samples li span:first-child { font-weight: 500; }
+
+/* AI */
+.loop { list-style: none; margin: 4px 0 0; padding: 0; counter-reset: loop; display: flex; flex-direction: column; border-bottom: 1px solid var(--line); }
+.loop li { counter-increment: loop; display: grid; grid-template-columns: 1.8em minmax(0, 6.6em) minmax(0, 1fr); gap: 2px 10px; align-items: baseline; padding-block: 12px; border-top: 1px solid var(--line); font-size: 15.5px; }
+.loop li::before { content: counter(loop); font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.loop li b { font-family: var(--display); font-size: 17px; }
+.loop li span { min-width: 0; }
+@media (max-width: 560px) { .loop li { grid-template-columns: 1.8em minmax(0, 1fr); } .loop li span { grid-column: 2; } }
+.icu { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 18px; }
+.icu > div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.icu h4 { margin: 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.icu .ln { display: grid; grid-template-columns: 4.4em minmax(0, 1fr); gap: 6px 10px; align-items: baseline; font-size: 15.5px; }
+.icu .lang { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.icu .pc { display: inline-block; border: 1px dashed var(--muted); border-radius: 6px; padding: 1px 8px; margin: 0 6px 4px 0; }
+.icu .lk { color: var(--blue); text-decoration: underline; }
+.icu .res { grid-column: 2; font-size: 14px; color: var(--muted); min-width: 0; }
+.icu .ok { color: var(--good); font-weight: 600; }
+.icu .no { color: var(--bad); font-weight: 600; }
+.icu code { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+ul.plain { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+
+footer { padding-block: 36px 60px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <nav aria-label="Sections">
+      <a href="#problem">Problem</a>
+      <a href="#idea">Idea</a>
+      <a href="#journey">Journey</a>
+      <a href="#voice">Voice</a>
+      <a href="#ai">AI workflow</a>
+      <a href="#next">Next</a>
+    </nav>
+    <div class="loc">
+      <span id="loc-label">Product language</span>
+      <div class="seg" role="group" aria-labelledby="loc-label">
+        <button type="button" data-loc="en" aria-pressed="true">English</button>
+        <button type="button" data-loc="zh" aria-pressed="false">中文</button>
+        <button type="button" data-loc="ko" aria-pressed="false">한국어</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<header class="hero wide">
+  <div class="hero-in">
+    <div class="hero-txt">
+      <p class="eyebrow">Content design case study · October 2026</p>
+      <h1>Popcorn <em>Language</em></h1>
+      <p class="lede">A web app that turns any YouTube video into a short list of expressions worth learning. I named its features, wrote its interface in English, Chinese and Korean, designed the prompts that write its lessons, and built it.</p>
+    </div>
+    <img src="mascot.png" alt="The Popcorn Language mascot: a yellow corn kernel with popcorn hair, round glasses and blue sneakers" width="190" height="252">
+  </div>
+  <dl class="facts">
+    <div><dt>Author</dt><dd>Cao Xingran<br><span class="muted">NUS School of Computing</span></dd></div>
+    <div><dt>Role</dt><dd>Content design, product, engineering. Solo.</dd></div>
+    <div><dt>Timeline</dt><dd>May 2025 to now</dd></div>
+    <div><dt>Languages</dt><dd>English, Chinese, Korean interface</dd></div>
+    <div><dt>Contact</dt><dd>xingran_cao@u.nus.edu</dd></div>
+  </dl>
+  <p class="caption">The switch at the top changes the language of every product panel on this page. The panels are rebuilt from the app's own components and message files, so every string you see is the one that ships.</p>
+</header>
+
+<section id="problem">
+  <div class="col">
+    <p class="eyebrow">The problem</p>
+    <h2>You understood every joke. You learned nothing.</h2>
+    <p>You watch an English YouTuber for half an hour and follow all of it. A few minutes later someone asks what new expressions you picked up, and nothing comes to mind.</p>
+    <p>Most learners blame their own discipline. I think the tools are at fault. Each way of watching fails for a different reason.</p>
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>How you watch</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td><strong>No captions</strong></td><td>Too hard. Most people give up within minutes.</td></tr>
+          <tr><td><strong>Captions in your language</strong></td><td>You follow the story and pick up no new words.</td></tr>
+          <tr><td><strong>Captions in the language you're learning</strong></td><td>You read instead of listening.</td></tr>
+          <tr><td><strong>Flashcard apps</strong></td><td>Well organised, but the sentences have nothing to do with your life.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Fun content is hard to learn from. Content built for learning is rarely fun.</p>
+    <p class="question">How do you turn fast, unscripted video into small things worth learning, without interrupting the video?</p>
+    <p>I used to work as an interpreter, so I get asked why anyone should learn a language now that AI translates everything. Translation gets business done. It doesn't let you get the joke first-hand. Popcorn Language uses AI to support the learner, and leaves the understanding to them.</p>
+  </div>
+</section>
+
+<section id="idea">
+  <div class="col">
+    <p class="eyebrow">The idea</p>
+    <h2>Learning as snacking</h2>
+    <p>Every feature name in the product comes from one picture: you're watching something good, and you're snacking. I chose it for three reasons, and each one answers a specific anxiety that language apps create.</p>
+  </div>
+  <div class="wide three" style="margin-top:24px">
+    <div>
+      <h3>Saving creates no homework</h3>
+      <p>In a flashcard app, every word you save becomes a review due tomorrow. People stop saving. Bagging a snack owes you nothing.</p>
+    </div>
+    <div>
+      <h3>A pantry has no overdue pile</h3>
+      <p>Unreviewed cards build up, feel like debt, and people quit. A pouch only holds what you picked. The counter shows what you've collected and never what you've missed.</p>
+    </div>
+    <div>
+      <h3>Relaxed people learn more</h3>
+      <p>Krashen's affective filter hypothesis says anxiety blocks acquisition. Words like taste, bite and digest carry none of the classroom.</p>
+    </div>
+  </div>
+</section>
+
+<section id="journey">
+  <div class="col">
+    <p class="eyebrow">The journey</p>
+    <h2>From sign-up to a full pouch, in six screens</h2>
+    <p>Step through a first session. Try the controls inside each panel: the score mapper works, and the expressions you bag in step 5 are the ones that show up in step 6.</p>
+  </div>
+
+  <div class="wide stage">
+    <div class="steps" role="tablist" aria-label="Journey steps">
+      <button type="button" role="tab" data-step="0" aria-selected="true"><b>1</b>Sign up</button>
+      <button type="button" role="tab" data-step="1" aria-selected="false"><b>2</b>Set a level</button>
+      <button type="button" role="tab" data-step="2" aria-selected="false"><b>3</b>Pick a video</button>
+      <button type="button" role="tab" data-step="3" aria-selected="false"><b>4</b>Wait</button>
+      <button type="button" role="tab" data-step="4" aria-selected="false"><b>5</b>Bag it</button>
+      <button type="button" role="tab" data-step="5" aria-selected="false"><b>6</b>Snack Pouch</button>
+    </div>
+
+    <!-- 1 sign up -->
+    <div class="pane" data-pane="0">
+      <div class="ui">
+        <div class="seg" role="group" aria-label="Invite code state" style="align-self:flex-start">
+          <button type="button" data-inv="ok" aria-pressed="true">Valid code</button>
+          <button type="button" data-inv="bad" aria-pressed="false">Wrong code</button>
+        </div>
+        <h4 data-k="auth.createAccount"></h4>
+        <div class="field" data-k="auth.username"></div>
+        <div class="field" data-k="auth.email"></div>
+        <div class="field" data-k="auth.passwordPlaceholder"></div>
+        <div class="field" id="inv-field"></div>
+        <div class="err" id="inv-err" data-k="auth.errInviteCodeInvalid" hidden></div>
+        <div class="btn" data-k="auth.createAccountBtn"></div>
+      </div>
+      <div class="notes">
+        <h3>Plain words where trust is at stake</h3>
+        <p>There are no snack words on this screen. Someone handing over an email and a password wants to know exactly what is happening, so the copy is literal.</p>
+        <p>The password rule sits inside the field, before the first attempt. People shouldn't have to fail once to learn the rule.</p>
+        <p>The beta is invite-only. The code in the field is the current one.</p>
+        <p>Switch to Wrong code to see the error. The first version started in lower case, said "exhausted", and gave no next step. It now says what to check and what to do.</p>
+      </div>
+    </div>
+
+    <!-- 2 level -->
+    <div class="pane" data-pane="1" hidden>
+      <div class="ui">
+        <h4 data-k="profile.testScore.title"></h4>
+        <div class="hint" data-k="profile.testScore.hintNewUser"></div>
+        <div class="row">
+          <div class="grow">
+            <label for="test-type" data-k="profile.testScore.testTypeLabel"></label>
+            <select id="test-type" disabled><option>IELTS</option></select>
+          </div>
+          <div class="grow">
+            <label for="test-score" data-k="profile.testScore.scoreLabel"></label>
+            <select id="test-score"></select>
+          </div>
+        </div>
+        <div class="sub" id="mapped"></div>
+        <div class="btn" data-k="profile.testScore.applyButton"></div>
+        <div class="hint" id="cooldown"></div>
+      </div>
+      <div class="notes">
+        <h3>Ask for what people already know</h3>
+        <p>Few learners know their CEFR level. Most know their IELTS, TOEFL or CET score. The form asks for the score and shows the level it maps to before anything is saved.</p>
+        <p>The level decides how hard every lesson will be, so it can only change once a week. The hint says so, and says how long is left.</p>
+      </div>
+    </div>
+
+    <!-- 3 pick -->
+    <div class="pane" data-pane="2" hidden>
+      <div class="ui">
+        <div class="row">
+          <div class="field grow" data-k="search.placeholder"></div>
+          <div class="btn" data-k="search.searchButton"></div>
+        </div>
+        <h4 data-k="search.recommendedForYou"></h4>
+        <div class="thumbs">
+          <div class="thumb th1">Street food tour: Bangkok after dark</div>
+          <div class="thumb th2">I tried to build a desk in one day</div>
+          <div class="thumb th3">Stand-up: airport security</div>
+        </div>
+      </div>
+      <div class="notes">
+        <h3>Start from interest</h3>
+        <p>A learning app usually opens with a syllabus. This one opens with a question about what you feel like watching. The metaphor starts here because this is where the mood is set.</p>
+        <p>The search button still says Search. The placeholder can play because the button next to it doesn't.</p>
+        <p class="small muted">Video titles are samples. The live app shows YouTube results.</p>
+      </div>
+    </div>
+
+    <!-- 4 wait -->
+    <div class="pane" data-pane="3" hidden>
+      <div class="ui">
+        <div class="segs">
+          <div class="seg" role="group" aria-label="Panel state">
+            <button type="button" data-wait="gen" aria-pressed="true">Generating</button>
+            <button type="button" data-wait="short" aria-pressed="false">Short batch</button>
+          </div>
+          <div class="seg" role="group" aria-label="Copy version">
+            <button type="button" data-copy="old" aria-pressed="false">Before</button>
+            <button type="button" data-copy="new" aria-pressed="true">After</button>
+          </div>
+        </div>
+        <div class="tabs">
+          <span class="on" data-k="watch.tabExpressions"></span>
+          <span data-k="watch.tabExpressionNotes"></span>
+          <span data-k="watch.tabSummary"></span>
+          <span data-k="watch.tabNotes"></span>
+        </div>
+        <div class="gen" id="gen-bar">
+          <div class="top"><span><i class="dot"></i><span id="gen-text"></span></span><span id="gen-chunk" style="color:var(--ui-muted)"></span></div>
+          <div class="track"><i id="gen-fill" style="width:40%"></i></div>
+        </div>
+        <div class="banner" id="short-banner" hidden><span id="short-text"></span><b id="short-btn"></b></div>
+        <div id="wait-cards" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+      <div class="notes">
+        <h3>Keeping the wait calm</h3>
+        <p>Lessons are generated on demand. The transcript is split into sections and written in batches, which brings the first expressions down to 15 to 30 seconds. That is still a wait, so the screen works to keep it calm: a line says something is being made for you, the progress bar keeps moving, and expressions appear as each batch finishes, so the list is never blank.</p>
+        <p>The bag button stays off until generation ends, and its tooltip says when it will work.</p>
+        <p>Switch to Before to read the first version. It said "validated", "chunk 2/5" and "fallback-generated". Those words describe the pipeline, and a learner has no use for them. The rewrite keeps one number: how many expressions are ready to read. Short batch shows the worst case.</p>
+      </div>
+    </div>
+
+    <!-- 5 bag -->
+    <div class="pane" data-pane="4" hidden>
+      <div class="ui">
+        <div class="tabs">
+          <span class="on" data-k="watch.tabExpressions"></span>
+          <span data-k="watch.tabExpressionNotes"></span>
+          <span data-k="watch.tabSummary"></span>
+          <span data-k="watch.tabNotes"></span>
+        </div>
+        <div id="bag-cards" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div class="sub" id="bag-count"></div>
+      </div>
+      <div class="notes">
+        <h3>One verb for the main action</h3>
+        <p>"Bag it" replaced "Mark as wanna learn". It is two words, it names a physical action, and it promises nothing about studying later.</p>
+        <p>Each card answers three questions in the learner's own language: what it means here, how to use it, and why it's worth knowing. Switch the product language and the explanations follow, while the expression and its example stay in English.</p>
+        <p class="small muted">In the app the button is an icon and this label is its tooltip. It is shown as text here so you can read it. Expressions are samples in the app's output format.</p>
+      </div>
+    </div>
+
+    <!-- 6 pouch -->
+    <div class="pane" data-pane="5" hidden>
+      <div class="ui">
+        <div>
+          <h4 data-k="journey.pageTitle"></h4>
+          <div class="sub" data-k="journey.pageSubtitle"></div>
+        </div>
+        <div class="stats">
+          <div class="card stat"><b id="st-streak"></b><span data-k="journey.currentStreak"></span></div>
+          <div class="card stat"><b id="st-saved"></b><span data-k="journey.wordsLearned"></span></div>
+          <div class="card stat"><b>1</b><span data-k="journey.videosWatched"></span></div>
+        </div>
+        <div class="tabs">
+          <span data-k="journey.tabCheckin"></span>
+          <span data-k="journey.tabAchievements"></span>
+          <span class="on" data-k="journey.tabRecordBook"></span>
+        </div>
+        <div id="pouch"></div>
+      </div>
+      <div class="notes">
+        <h3>A counter that only goes up</h3>
+        <p>The pouch shows what you've collected. Nothing is marked overdue and there is no red badge. "Expressions Savored" counts what you've gained.</p>
+        <p>Go back to step 5 and take everything out to see the empty state. It says what the pouch is for and names the exact button that fills it.</p>
+      </div>
+    </div>
+
+    <div class="stepnav">
+      <button type="button" class="ghost" id="prev">Back</button>
+      <button type="button" class="ghost" id="next">Next step</button>
+    </div>
+  </div>
+</section>
+
+<section id="voice">
+  <div class="col">
+    <p class="eyebrow">Voice and standards</p>
+    <h2>Four rules any writer on the product can apply</h2>
+    <p>A glossary keeps terms consistent. It doesn't tell the next writer what to do with a string nobody has written yet. These four rules do. Three of the four "don't" examples are strings the product used to ship.</p>
+  </div>
+
+  <div class="wide principles">
+    <div class="principle">
+      <h3><span>1</span>Plain first, playful second</h3>
+      <p>If a snack word makes the action harder to guess, use the plain word. One snack word per string is enough.</p>
+      <dl class="dd">
+        <dt class="do">Do</dt><dd class="q">Bag it</dd>
+        <dt class="dont">Don't</dt><dd class="q">Remake</dd>
+        <dt></dt><dd class="muted small">"Remake" was meant to sound like the kitchen. Nobody guessed that it reloads the list, so the button now says "Try again".</dd>
+      </dl>
+    </div>
+    <div class="principle">
+      <h3><span>2</span>Count what's gained</h3>
+      <p>Show totals and streaks. Never show what's overdue, unreviewed or missed.</p>
+      <dl class="dd">
+        <dt class="do">Do</dt><dd class="q">12 authentic expressions bagged</dd>
+        <dt class="dont">Don't</dt><dd class="q">12 expressions waiting for review</dd>
+      </dl>
+    </div>
+    <div class="principle">
+      <h3><span>3</span>Say it like a friend on the sofa</h3>
+      <p>Short sentences. "You" and "your". Contractions. Tell people what to do next, and skip the apology.</p>
+      <dl class="dd">
+        <dt class="do">Do</dt><dd class="q">Enter your email.</dd>
+        <dt class="dont">Don't</dt><dd class="q">email is required</dd>
+      </dl>
+    </div>
+    <div class="principle">
+      <h3><span>4</span>Hide the machinery</h3>
+      <p>Cache, chunk, fallback, validated, legacy: these are the team's words. If the reader can't act on a detail, leave it out.</p>
+      <dl class="dd">
+        <dt class="do">Do</dt><dd class="q">Older batch. Can't be bagged.</dd>
+        <dt class="dont">Don't</dt><dd class="q">Legacy cached content can't be bagged</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="col" style="margin-top:36px">
+    <h3>How much metaphor, and where</h3>
+    <p>The snack language is strongest where people learn and absent where they need certainty. The product already behaves this way. Writing it down turns a habit into a standard. Pick a surface to see real strings from it.</p>
+    <div class="seg" role="group" aria-label="Surface" style="align-self:flex-start">
+      <button type="button" data-dial="0" aria-pressed="true">Learning moments</button>
+      <button type="button" data-dial="1" aria-pressed="false">Navigation</button>
+      <button type="button" data-dial="2" aria-pressed="false">Account and security</button>
+      <button type="button" data-dial="3" aria-pressed="false">Errors</button>
+    </div>
+    <div>
+      <div class="dial-row">
+        <span class="meter" id="meter" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="dial-label" id="dial-label"></span>
+      </div>
+      <p id="dial-rule" style="margin-top:8px"></p>
+      <ul class="samples" id="dial-samples"></ul>
+    </div>
+  </div>
+
+  <div class="wide" style="margin-top:40px">
+    <h3>Glossary</h3>
+    <p class="muted small" style="margin-top:6px">One term per concept. The last column lists the words each term replaced, so they don't come back.</p>
+    <div class="tscroll" style="margin-top:10px">
+      <table>
+        <thead><tr><th>Term</th><th>Use it for</th><th>中文</th><th>한국어</th><th>Don't write</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Bag it</strong><br><span class="muted small">button</span></td><td>Saving one expression from a video</td><td>装进袋子</td><td>주워 담기</td><td class="muted">Save, Add, Mark as wanna learn</td></tr>
+          <tr><td><strong>Snack Pouch</strong><br><span class="muted small">place</span></td><td>The list of everything you've bagged</td><td>随身零食袋</td><td>간식 주머니</td><td class="muted">Record Book, Word bank, Vocabulary list</td></tr>
+          <tr><td><strong>Expressions Savored</strong><br><span class="muted small">counter</span></td><td>The running total of bagged expressions</td><td>已嚼表达</td><td>맛본 표현</td><td class="muted">Words Learned</td></tr>
+          <tr><td><strong>Digested</strong><br><span class="muted small">state</span></td><td>An expression you've marked as already known. Reserved for a feature that isn't built yet.</td><td>彻底吃透</td><td>완전히 소화됨</td><td class="muted">Mastered, Familiar</td></tr>
+          <tr><td><strong>Snack Streak</strong><br><span class="muted small">counter</span></td><td>Days in a row you've checked in</td><td>连续赏味</td><td>연속 음미</td><td class="muted">Current Streak, Learning streak</td></tr>
+          <tr><td><strong>Popping your popcorn…</strong><br><span class="muted small">loading</span></td><td>Lesson generation only. Never for ordinary page loads.</td><td>正在为你制作爆米花…</td><td>팝콘을 튀기는 중…</td><td class="muted">Generating…, Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col" style="margin-top:36px">
+    <h3>The metaphor is rebuilt in each language</h3>
+    <ul class="plain">
+      <li>Chinese got lucky. 吃透, "to eat something through", is already the everyday idiom for understanding a thing fully, so 彻底吃透 is stronger than the English it came from.</li>
+      <li>"Snack Hoarder" became 零食大富翁 (snack tycoon) and 간식계 만수르, which borrows a Korean meme about a famously rich man. Neither is a translation. Both keep the joke.</li>
+    </ul>
+  </div>
+
+  <div class="col" style="margin-top:36px">
+    <h3>Sentences follow ICU MessageFormat</h3>
+    <p>Every string is one complete ICU message. Variables and links sit inside the sentence, so each language sets its own word order, punctuation and plural forms.</p>
+    <p>The consent line on the sign-up form shows why this matters. English puts the verb first: "I agree to the Privacy Policy." Korean puts it last, closer to "To the Privacy Policy, I agree." The first version stored that sentence as two separate strings, and the code always printed them in the same order. English read fine. Korean came out verb-first, which is not how a Korean sentence is built. As one ICU message, each language places the link where its grammar needs it.</p>
+  </div>
+  <div class="wide icu">
+    <div>
+      <h4>Before · two strings joined in code</h4>
+      <div class="ln"><span class="lang">English</span><span><span class="pc">I agree to the</span><span class="pc lk">Privacy Policy</span></span>
+        <span class="res"><span class="ok">Reads right.</span> Verb, then the thing agreed to.</span></div>
+      <div class="ln"><span class="lang">Korean</span><span lang="ko"><span class="pc">동의합니다</span><span class="pc lk">개인정보 처리방침</span></span>
+        <span class="res"><span class="no">Reads wrong.</span> "Agree" came first, and a Korean sentence ends with its verb.</span></div>
+    </div>
+    <div>
+      <h4>After · one ICU message per language</h4>
+      <div class="ln"><span class="lang">English</span><span>I agree to the <span class="lk">Privacy Policy</span></span>
+        <span class="res"><code>I agree to the &lt;link&gt;Privacy Policy&lt;/link&gt;</code></span></div>
+      <div class="ln"><span class="lang">Korean</span><span lang="ko"><span class="lk">개인정보 처리방침</span>에 동의합니다</span>
+        <span class="res"><code>&lt;link&gt;개인정보 처리방침&lt;/link&gt;에 동의합니다</code><br><span class="ok">Reads right.</span> "Privacy Policy" first, "agree" last.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="ai">
+  <div class="col">
+    <p class="eyebrow">AI workflow</p>
+    <h2>How the copy gets written with an AI agent</h2>
+    <p>I built Popcorn Language alone with an AI coding agent: more than 180 commits since May 2025. The interface copy for three languages came out of the same way of working. It runs in five steps.</p>
+    <ol class="loop">
+      <li><b>Extract</b><span>The agent pulls every button label and message out of the front-end code into one file of keys per language. That file is the base for localization.</span></li>
+      <li><b>Brief</b><span>I write the brief as a prompt: the brand concept, which features speak in the snack metaphor, and which screens stay strictly functional.</span></li>
+      <li><b>Draft</b><span>From the brief, the agent drafts the message file for each language.</span></li>
+      <li><b>Calibrate</b><span>I read the drafts and adjust them by hand.</span></li>
+      <li><b>Audit</b><span>The agent scans every file again. It looks for sentences that read badly, one concept named two ways on different pages, and a key that means different things in different languages. Then I adjust again.</span></li>
+    </ol>
+  </div>
+
+</section>
+
+<section id="next">
+  <div class="col">
+    <p class="eyebrow">What comes next</p>
+    <h2>What this design hasn't proved yet</h2>
+    <p>Popcorn Language is in a closed beta, so there is no real user feedback yet. The voice comes from my own side of the screen: it is what I, as a learner, want a language product to sound like. That is a starting point and not evidence.</p>
+    <p>If I take the product further, I would let users decide:</p>
+    <ul class="plain">
+      <li>Find people who learn from video and A/B test the snack labels against plain ones.</li>
+      <li>Run short trials and surveys to hear how the labels read to them.</li>
+      <li>Track taps where the metaphor names an action, and compare click-through. Does "Bag it" get used more than "Save"?</li>
+    </ul>
+    <p>The copy should then change with the numbers.</p>
+  </div>
+</section>
+
+<footer class="wide">Cao Xingran · Popcorn Language · Product panels are recreated from the app's components and message files. Sample videos and expressions are illustrative.</footer>
+
+</div>
+
+<script>
+const S = {"en": {"common.tryAgain": "Try again", "common.retry": "Retry", "common.loading": "Loading...", "common.cancel": "Cancel", "common.save": "Save", "common.back": "Back", "search.pageTitle": "Search Videos", "search.placeholder": "Pick today's flavor…", "search.searchButton": "Search", "search.recentlyWatched": "Recently Watched", "search.recommendedForYou": "Today's Flavor Picks", "search.error": "Error: {message}", "search.noResults": "No videos found", "nav.homepage": "Homepage", "nav.findVideos": "Explore New Worlds", "nav.myJourney": "Snack Journey", "nav.myProfile": "My Profile", "nav.logIn": "Log In", "nav.signUp": "Sign Up", "nav.logOut": "Log Out", "nav.home": "Home", "nav.searchVideos": "Grab a Snack", "nav.backToTop": "Back to Top", "nav.goToHome": "Go to Home", "nav.backToVideo": "Back to Video", "nav.watchHistory": "Watch History", "home.heroTitle": "Snack on real language", "home.heroSubtitle": "Watch the YouTube videos you love. Pick up the expressions locals actually use, one bite at a time.", "home.startLearning": "Start Snacking", "home.login": "Log In", "home.signUp": "Sign Up", "home.continueLearning": "Keep Tasting", "home.refresh": "Refresh", "home.refreshing": "Refreshing...", "home.viewAll": "View All", "home.noRecentVideos": "No recent videos to continue", "home.yourLearningProgress": "Your Snack Progress", "home.viewDetails": "View Details", "home.wordsLearned": "Expressions Savored", "home.videosWatched": "Videos Watched", "home.currentStreak": "Snack Streak", "home.streakValue": "{n, plural, one {# day} other {# days}}", "home.lastStudy": "Last session", "home.never": "Never", "home.recommendedForYou": "Today's Flavor Picks", "home.findMore": "Find More", "home.noRecommendedVideos": "No recommended videos available", "home.featuresTitle": "Popcorn Language Features", "home.featurePersonalizedTitle": "Tailored to Your Taste", "home.featurePersonalizedDesc": "Expressions picked for your level as you watch. Just hard enough, bite-sized and easy to digest.", "home.featureInteractiveTitle": "Watch & Chew, Zero Interruption", "home.featureInteractiveDesc": "Skip the dictionary. Grab authentic expressions straight from the scene.", "home.featureProgressTitle": "Your Snack Pouch", "home.featureProgressDesc": "Tap once to bag authentic collocations — clearly track how many new expressions you've digested each day.", "home.ctaTitle": "Ready to start your language learning journey?", "home.ctaDesc": "Join Popcorn Language, watch your favorite videos, and effortlessly bag and savor authentic native expressions.", "journey.pageTitle": "Snack Journey", "journey.pageSubtitle": "Track every bagged bite and celebrate your growth", "journey.dailyCheckInTitle": "Daily Snack Check-in", "journey.unknownError": "Unknown error", "journey.currentStreak": "Snack Streak", "journey.streakValue": "{n, plural, one {# day} other {# days}}", "journey.wordsLearned": "Expressions Savored", "journey.videosWatched": "Videos Watched", "journey.achievementsCount": "Achievements", "journey.achievementsRatio": "{unlocked}/{total}", "journey.tabCheckin": "Daily Check-in", "journey.tabAchievements": "Achievements", "journey.tabRecordBook": "Snack Pouch", "journey.recordBookTitle": "My Snack Pouch", "journey.recordBookCount": "{n, plural, one {# authentic expression bagged} other {# authentic expressions bagged}}", "journey.recordBookDayCount": "{n}", "journey.recordBookEmpty": "Your snack pouch is empty", "journey.recordBookEmptyHint": "Tap \"Bag it\" while watching — your favorite highlight expressions go into your snack pouch, grouped by date.", "journey.personalNote": "<label>Savoring Notes:<\/label> {text}", "journey.jumpToVideo": "Jump back to video", "journey.openVideo": "Open video", "journey.quickStats": "Snack Stats", "journey.thisMonth": "This Month", "journey.bestStreak": "Best Streak", "journey.totalStudyDays": "Total Days Savored", "journey.checkingIn": "Checking in...", "journey.alreadyCheckedIn": "Already checked in today!", "journey.checkInToday": "Check in for today", "journey.loading": "Loading...", "journey.daysThisMonth": "Days This Month", "journey.checkInSuccess": "✅ {message} - Streak: {streak, plural, one {# day} other {# days}}!", "journey.newAchievements": "🎉 New achievements: {list}", "journey.checkInFailed": "Check-in failed: {error}", "journey.loadCalendarFailed": "Failed to load calendar: {error}", "journey.failedToLoadAchievements": "Failed to load achievements", "journey.allUnlockedCongrats": "🎉 Congratulations! You've unlocked all achievements!", "journey.moreToUnlock": "{n, plural, one {# more achievement to unlock} other {# more achievements to unlock}}", "journey.filterAll": "All ({n})", "journey.filterUnlocked": "Unlocked ({n})", "journey.filterLocked": "Locked ({n})", "journey.progress": "Progress", "journey.unlockedDate": "Unlocked {date}", "journey.emptyUnlocked": "No achievements unlocked yet", "journey.emptyLocked": "All achievements unlocked!", "journey.emptyAll": "No achievements found", "journey.emptyHintUnlocked": "Start exploring videos to unlock your first achievement!", "journey.emptyHintLocked": "Congratulations on unlocking all achievements!", "journey.emptyHintAll": "Keep learning to discover new achievements!", "journey.weekdaySun": "Sun", "journey.weekdayMon": "Mon", "journey.weekdayTue": "Tue", "journey.weekdayWed": "Wed", "journey.weekdayThu": "Thu", "journey.weekdayFri": "Fri", "journey.weekdaySat": "Sat", "journey.ach_first_steps_title": "First Bite", "journey.ach_first_steps_desc": "Watch your first video", "journey.ach_week_warrior_title": "Snack Week Warrior", "journey.ach_week_warrior_desc": "Keep a 7-day snack streak", "journey.ach_vocabulary_master_title": "Snack Hoarder", "journey.ach_vocabulary_master_desc": "Bag 100 expressions", "journey.ach_vocabulary_master_milestone": "{n, plural, one {# more expression to go!} other {# more expressions to go!}}", "journey.ach_movie_buff_title": "Movie Buff", "journey.ach_movie_buff_desc": "Watch 50 videos", "journey.ach_movie_buff_milestone": "{n, plural, one {# more video to go!} other {# more videos to go!}}", "journey.ach_consistency_king_title": "Master Chewer", "journey.ach_consistency_king_desc": "Keep a 30-day snack streak", "journey.ach_consistency_king_milestone": "{n, plural, one {# more day to go!} other {# more days to go!}}", "journey.ach_speed_learner_title": "Speed Snacker", "journey.ach_speed_learner_desc": "Bag 20 expressions in a single day", "journey.ach_speed_learner_milestone": "{n, plural, one {# more expression today!} other {# more expressions today!}}", "journey.ach_language_explorer_title": "Language Explorer", "journey.ach_language_explorer_desc": "Study for 100 total hours", "journey.ach_language_explorer_milestone": "{n, plural, one {# more hour to go!} other {# more hours to go!}}", "journey.ach_perfect_week_title": "Perfect Week", "journey.ach_perfect_week_desc": "Complete all daily goals for 7 consecutive days", "journey.ach_perfect_week_milestone": "{n, plural, one {# more perfect day!} other {# more perfect days!}}", "journey.ach_early_bird_title": "Morning Snack", "journey.ach_early_bird_desc": "Learn before 9 AM for 10 days", "journey.ach_early_bird_milestone": "{n, plural, one {# more early morning!} other {# more early mornings!}}", "journey.ach_night_owl_title": "Midnight Muncher", "journey.ach_night_owl_desc": "Learn after 10 PM for 10 days", "journey.ach_night_owl_milestone": "{n, plural, one {# more late night!} other {# more late nights!}}", "journey.ach_social_butterfly_title": "Power Flexer", "journey.ach_social_butterfly_desc": "Share your progress 5 times", "journey.ach_social_butterfly_milestone": "{n, plural, one {# more flex to go!} other {# more flexes to go!}}", "journey.ach_goal_crusher_title": "Goal Crusher", "journey.ach_goal_crusher_desc": "Achieve your monthly learning goal", "journey.ach_goal_crusher_milestone": "{n}% more to reach your goal!", "auth.welcomeBack": "Welcome Back", "auth.createAccount": "Create an Account", "auth.email": "Email", "auth.password": "Password", "auth.username": "Username", "auth.inviteCode": "Invite code", "auth.confirmPassword": "Confirm Password", "auth.logIn": "Log In", "auth.loggingIn": "Logging in...", "auth.createAccountBtn": "Create an account", "auth.creatingAccount": "Creating account...", "auth.forgotPassword": "Forgot your password?", "auth.createNewAccount": "Create a new account", "auth.alreadyHaveAccount": "Already have an account? Log in", "auth.passwordPlaceholder": "Password (min 8 chars, letters & numbers)", "auth.agreeToPrivacy": "I agree to the <link>Privacy Policy<\/link>", "auth.errEmailRequired": "Enter your email.", "auth.errEmailInvalid": "Enter a valid email, like name@example.com.", "auth.errPasswordRequired": "Enter your password.", "auth.errPasswordLength6": "Use at least 6 characters.", "auth.errPasswordLength8": "Use at least 8 characters.", "auth.errPasswordFormat": "Use both letters and numbers.", "auth.errUsernameRequired": "Enter a username.", "auth.errInviteCodeRequired": "Enter your invite code.", "auth.errInviteCodeInvalid": "That code didn't work. Check for typos, or ask for a new one if it's been used up.", "auth.errConfirmMismatch": "The passwords don't match.", "auth.errAgreeRequired": "Agree to the privacy policy to continue.", "auth.verificationPending": "Your email is not verified yet. Some features may be limited.", "auth.verificationSent": "Verification email sent. Check your inbox (and spam folder).", "auth.resendVerification": "Resend verification", "auth.sending": "Sending…", "auth.resetPasswordTitle": "Reset Password", "auth.setNewPasswordTitle": "Set New Password", "auth.emailPlaceholder": "Email", "auth.errValidEmail": "Enter a valid email.", "auth.errRequestReset": "Failed to request reset", "auth.resetSentDesc": "If an account exists for <email>{email}<\/email>, we've sent a password reset link. Check your inbox (and spam folder).", "auth.backToLogin": "Back to login", "auth.sendResetLink": "Send reset link", "auth.newPasswordPlaceholder": "New password (min 8 chars, letters & numbers)", "auth.confirmNewPasswordPlaceholder": "Confirm new password", "auth.errResetFailed": "Reset failed. The link may be expired or invalid.", "auth.resetTokenMissing": "Reset token is missing.", "auth.requestNewResetLink": "Request a new reset link", "auth.resetting": "Resetting…", "auth.resetPasswordBtn": "Reset password", "auth.verifyEmailTitle": "Verify Email", "auth.verifying": "Verifying your email…", "auth.verifySuccess": "Your email has been verified. You can now log in.", "auth.verifyTokenMissing": "Verification token is missing.", "auth.verifyFailed": "Verification failed. The link may be expired or invalid.", "auth.goToLogin": "Go to Login", "auth.checkYourEmail": "Check your email", "auth.verificationLinkSent": "We've sent a verification link to {email}.", "auth.verificationLinkSentNoEmail": "We've sent a verification link.", "auth.clickLinkToVerify": "Click the link in the email to verify your account.", "auth.verificationResent": "Verification email resent. If you still don't see it, check your spam folder.", "auth.resendVerificationEmail": "Resend verification email", "auth.errNoEmail": "Cannot determine your email. Please log in again.", "auth.errResendFailed": "Failed to resend", "auth.goToLoginLower": "Go to login", "profile.loginRequired": "You are not logged in. Please <login>log in<\/login> or <signup>sign up<\/signup> to save your settings.", "profile.home": "Home", "profile.myProfile": "My Profile", "profile.joined": "Joined {date}", "profile.memberType": "{type} Member", "profile.memberTypeWithExpiry": "{type} Member · Expires {date}", "profile.logOut": "Log Out", "profile.profileCompletion": "Profile Completion", "profile.completeProfileHint": "Set a learning goal, choose your languages and add a bio to reach 100%", "profile.learningStats": "Learning Stats", "profile.wordsLearned": "Expressions Savored", "profile.videosWatched": "Videos Watched", "profile.currentStreak": "Snack Streak", "profile.streakValue": "{n, plural, one {# day} other {# days}}", "profile.lastStudy": "Last session", "profile.learningPreferences": "Learning Preferences", "profile.unsavedChanges": "You have unsaved changes. Click \"Save Changes\" to update your settings.", "profile.saving": "Saving...", "profile.saveChanges": "Save Changes", "profile.noChanges": "No Changes", "profile.settingsSaved": "Settings saved successfully!", "profile.saveFailed": "Failed to save settings", "profile.learningGoal": "Learning Goal", "profile.learningGoalTooltip": "Your primary learning objective", "profile.languageLevel": "Language Level", "profile.languageLevelTooltip": "Your current proficiency level", "profile.levelA1": "A1 (Beginner)", "profile.levelA2": "A2 (Elementary)", "profile.levelB1": "B1 (Intermediate)", "profile.levelB2": "B2 (Upper Intermediate)", "profile.levelC1": "C1 (Advanced)", "profile.levelC2": "C2 (Proficiency)", "profile.testScore.title": "Set level from test score", "profile.testScore.hintNewUser": "Have a CET / IELTS / TOEFL score? Map it to a CEFR level to start accurately.", "profile.testScore.testTypeLabel": "Test type", "profile.testScore.scoreLabel": "Score", "profile.testScore.levelLabel": "Level", "profile.testScore.mappedLevel": "Mapped level: <value>{level}<\/value>", "profile.testScore.applyButton": "Apply to my level", "profile.testScore.recordedTitle": "Recorded scores", "profile.testScore.emptyRecorded": "No scores recorded yet.", "profile.testScore.removeScore": "Remove", "profile.testScore.reapplyScore": "Re-apply", "profile.testScore.scoreOutOfRange": "Score is outside this test's range.", "profile.testScore.previewWaiting": "Enter a score to see the mapped level.", "profile.testScore.stagedBadge": "Unsaved", "profile.testScore.dismissHint": "Dismiss", "profile.testScore.levelSourceHint": "Your level follows the score you most recently applied. The list below is your score archive.", "profile.testScore.cooldownHint": "Level changes are limited to once every 7 days. You can change again in {days, plural, one {# day} other {# days}}.", "profile.testScore.cooldownSaveBlocked": "Level change is on a 7-day cooldown. Try again in {days, plural, one {# day} other {# days}}.", "profile.testType.cet4": "CET-4", "profile.testType.cet6": "CET-6", "profile.testType.ielts": "IELTS", "profile.testType.toefl": "TOEFL iBT", "profile.testType.duolingo": "Duolingo English Test", "profile.testType.pte": "PTE Academic", "profile.testType.topik": "TOPIK", "profile.testType.hsk": "HSK", "profile.learningLanguage": "Target Language", "profile.learningLanguageTooltip": "The language you want to learn", "profile.learningLanguageOption.english": "English", "profile.learningLanguageOption.japanese": "Japanese", "profile.learningLanguageOption.korean": "Korean", "profile.learningLanguageOption.spanish": "Spanish", "profile.learningLanguageOption.french": "French", "profile.learningLanguageOption.german": "German", "profile.learningLanguageOption.chinese": "Chinese", "profile.comingSoon": "Coming soon", "profile.interfaceLanguage": "Interface Language", "profile.interfaceLanguageTooltip": "Your native language. Determines the UI text and explanation language.", "profile.bio": "Bio", "profile.bioTooltip": "A little about you and how you're learning", "profile.bioPlaceholder": "How would you describe yourself in one line?", "profile.bioCharCount": "{n}/200 characters", "profile.notificationSettings": "Notification Settings", "profile.dailyReminder": "Daily Study Reminder", "profile.weeklyReport": "Weekly Progress Report", "profile.achievementAlerts": "Achievement Alerts", "profile.accountSecurity": "Account Security", "profile.changePassword": "Change Password", "profile.verified": "Verified", "profile.unverified": "Unverified", "profile.currentPassword": "Current Password", "profile.newPassword": "New Password", "profile.confirmNewPassword": "Confirm New Password", "profile.newPasswordPlaceholder": "min 8 chars, letters & numbers", "profile.passwordChanged": "Password changed. Please log in again.", "profile.changing": "Changing...", "profile.passwordChangeHint": "Changing your password will sign you out of all devices for security.", "profile.errCurrentPassword": "Enter your current password.", "profile.errNewPasswordRequired": "Enter a new password.", "profile.errNewPasswordLength": "Use at least 8 characters.", "profile.errNewPasswordFormat": "Use both letters and numbers.", "profile.errConfirmMismatch": "The passwords don't match.", "profile.achievements": "Achievements", "profile.viewAll": "View All", "profile.showLess": "Show Less", "profile.unlocked": "UNLOCKED", "profile.unlockedDate": "Unlocked: {date}", "profile.progress": "Progress", "profile.nextMilestone": "Next: {milestone}", "profile.share": "Share", "profile.shareTooltip": "Share this achievement", "profile.confirmSaveTitle": "Save changes?", "profile.confirmSaveDesc": "Are you sure you want to save all your changes? This will update your learning preferences and notification settings.", "profile.cancel": "Cancel", "watch.loading": "Getting the theater ready…", "watch.failedToLoad": "Failed to load video: {error}", "watch.goBack": "Go Back", "watch.currentCaption": "Current Caption", "watch.freeNotes": "Free Notes", "watch.learningMaterials": "Highlights", "watch.tabExpressions": "Authentic Expressions", "watch.tabNotes": "Notes", "watch.tabExpressionNotes": "Savored Expressions", "watch.tabSummary": "Summary", "summary.title": "Summary", "summary.retry": "Retry", "summary.generate": "Generate", "summary.regenerate": "Regenerate", "summary.regenerateTooltip": "Regenerate summary", "summary.empty": "No summary yet. Click \"Generate\" to create one for this video.", "summary.generatedOn": "Generated on {date}", "notes.loading": "Loading notes...", "notes.placeholder": "Jot a spark or mnemonic… (Ctrl+Enter to add)", "notes.anchorAt": "Anchor at {time}", "notes.addNote": "Add note", "notes.addNoteTooltip": "Add this note (Ctrl+Enter)", "notes.empty": "No notes yet. Start by adding one above.", "notes.cancel": "Cancel", "notes.cancelTooltip": "Cancel (Esc)", "notes.save": "Save", "notes.saveTooltip": "Save (Ctrl+Enter)", "notes.editTooltip": "Edit note", "notes.deleteTooltip": "Delete note", "notes.jumpTo": "Jump to {time}", "notes.noTimestamp": "No timestamp", "vocab.loading": "Picking authentic expressions to your taste…", "vocab.empty": "No expressions to your taste in this video yet", "vocab.emptyHint": "Try watching more of the video or check your language level in your profile.", "vocab.emptyHintError": "Please try again later.", "vocab.inContext": "<label>In context:<\/label> {text}", "vocab.definition": "<label>Definition:<\/label> {text}", "vocab.exampleLabel": "Example:", "vocab.exampleTranslation": "<label>Translation:<\/label> {text}", "vocab.fromVideoLabel": "From the video:", "vocab.whyLearnLabel": "Why learn this:", "vocab.difficultyCheckLabel": "Difficulty check:", "vocab.assessed": "assessed: {level}", "vocab.jumpTo": "Jump to {time}", "vocab.markAsFamiliar": "Fully Digested", "vocab.alreadyFamiliar": "Digested", "vocab.addToNotes": "Add to Notes", "vocab.addedToNotes": "Added to Notes", "vocab.showLess": "Show less", "vocab.showMore": "Show more", "vocab.generating": "Popping your popcorn… {shown} ready so far", "vocab.degradedBanner": "Some expressions didn't make it in time. Try again for the full set.", "vocab.regenerate": "Try again", "vocab.regenerating": "Trying again…", "vocab.markAsLearnable": "Bag it", "vocab.cancelSave": "Take it out of the pouch", "vocab.cannotSaveNoId": "Older batch. Can't be bagged.", "vocab.generatingNoSave": "Almost ready. Hang on.", "vocab.expressionNotesEmpty": "This video's snack pouch is empty", "vocab.expressionNotesEmptyHint": "Tap \"Bag it\" in the Authentic Expressions tab to add highlight expressions to your pouch.", "vocab.expressionNotesCount": "{n, plural, one {# authentic expression bagged for this video} other {# authentic expressions bagged for this video}}", "vocab.saved": "Bagged", "vocab.removeFromSaved": "Take it out of the pouch", "vocab.personalNoteLabel": "My savoring notes:", "vocab.personalNotePlaceholder": "Write your understanding, mnemonic, or usage note…", "history.continueWatching": "Continue Watching", "history.viewAll": "View All", "history.noPreview": "No preview", "history.untitledVideo": "(Deleted video)", "history.resumeFrom": "Resume from {time}", "history.historyTitle": "Watch History", "history.historyCount": "{n, plural, one {# video} other {# videos}}", "history.historyEmpty": "No watch history yet", "history.historyEmptyHint": "Watch a few videos from the search page — your progress will show up here.", "history.loadError": "Failed to load history", "history.loading": "Loading…", "history.loadMore": "Load More", "history.agoDays": "{n}d ago", "history.agoHours": "{n}h ago", "history.agoMinutes": "{n}m ago", "history.justNow": "Just now", "history.historySubtitle": "Which videos you've watched and where you left off"}, "zh": {"common.tryAgain": "重试", "common.retry": "重试", "common.loading": "加载中…", "common.cancel": "取消", "common.save": "保存", "common.back": "返回", "search.pageTitle": "搜索视频", "search.placeholder": "挑选今日份的兴趣所在…", "search.searchButton": "搜索", "search.recentlyWatched": "最近观看", "search.recommendedForYou": "今日风味推荐", "search.error": "错误：{message}", "search.noResults": "未找到视频", "nav.homepage": "首页", "nav.findVideos": "探索新世界", "nav.myJourney": "赏味历程", "nav.myProfile": "我的资料", "nav.logIn": "登录", "nav.signUp": "注册", "nav.logOut": "退出登录", "nav.home": "首页", "nav.searchVideos": "找点零食", "nav.backToTop": "回到顶部", "nav.goToHome": "回到首页", "nav.backToVideo": "返回", "nav.watchHistory": "观看历史", "home.heroTitle": "吃透地道外语", "home.heroSubtitle": "追你最爱的YouTube视频，一口一个，地道表达。", "home.startLearning": "开启赏味", "home.login": "登录", "home.signUp": "注册", "home.continueLearning": "继续品尝", "home.refresh": "刷新", "home.refreshing": "刷新中…", "home.viewAll": "查看全部", "home.noRecentVideos": "暂无最近观看的视频", "home.yourLearningProgress": "你的赏味进度", "home.viewDetails": "查看详情", "home.wordsLearned": "已嚼表达", "home.videosWatched": "已看视频", "home.currentStreak": "连续赏味", "home.streakValue": "{n} 天", "home.lastStudy": "上次学习", "home.never": "暂无", "home.recommendedForYou": "今日风味推荐", "home.findMore": "更多", "home.noRecommendedVideos": "暂无推荐视频", "home.featuresTitle": "Popcorn Language 功能", "home.featurePersonalizedTitle": "按你的口味定制", "home.featurePersonalizedDesc": "根据你的真实水平实时挑选高光语块，难易刚好，一口一个好吸收。", "home.featureInteractiveTitle": "边看边嚼，零打扰", "home.featureInteractiveDesc": "告别繁重的查词典流程，在原汁原味的原版语境中顺手把地道表达装袋，无痛积累。", "home.featureProgressTitle": "随身零食袋", "home.featureProgressDesc": "点一下就能把地道搭配装袋，清晰追踪每天吃透了多少新表达。", "home.ctaTitle": "准备好开启语言学习之旅了吗？", "home.ctaDesc": "加入 Popcorn Language，看你喜爱的视频，轻松装袋、慢慢嚼透纯正母语表达。", "journey.pageTitle": "赏味历程", "journey.pageSubtitle": "追踪每一次装袋与咀嚼，庆祝你的成长", "journey.dailyCheckInTitle": "每日赏味打卡", "journey.unknownError": "未知错误", "journey.currentStreak": "连续赏味", "journey.streakValue": "{n} 天", "journey.wordsLearned": "已嚼表达", "journey.videosWatched": "已看视频", "journey.achievementsCount": "成就勋章", "journey.achievementsRatio": "{unlocked}/{total}", "journey.tabCheckin": "每日打卡", "journey.tabAchievements": "成就", "journey.tabRecordBook": "随身零食袋", "journey.recordBookTitle": "我的零食袋", "journey.recordBookCount": "已装袋 {n} 个地道表达", "journey.recordBookDayCount": "{n} 个", "journey.recordBookEmpty": "零食袋空空如也哦～", "journey.recordBookEmptyHint": "看视频时点击「装进袋子」，喜欢的高光表达就会装进随身零食袋，按时间线汇总。", "journey.personalNote": "<label>咀嚼心得：<\/label>{text}", "journey.jumpToVideo": "跳回原视频", "journey.openVideo": "打开视频", "journey.quickStats": "赏味统计", "journey.thisMonth": "本月", "journey.bestStreak": "最长连续", "journey.totalStudyDays": "总赏味天数", "journey.checkingIn": "打卡中…", "journey.alreadyCheckedIn": "今天已打卡！", "journey.checkInToday": "今日打卡", "journey.loading": "加载中…", "journey.daysThisMonth": "本月天数", "journey.checkInSuccess": "✅ {message} - 已连续 {streak} 天！", "journey.newAchievements": "🎉 新解锁成就：{list}", "journey.checkInFailed": "打卡失败：{error}", "journey.loadCalendarFailed": "日历加载失败：{error}", "journey.failedToLoadAchievements": "成就加载失败", "journey.allUnlockedCongrats": "🎉 恭喜！你已解锁全部成就！", "journey.moreToUnlock": "还有 {n} 个成就待解锁", "journey.filterAll": "全部（{n}）", "journey.filterUnlocked": "已解锁（{n}）", "journey.filterLocked": "未解锁（{n}）", "journey.progress": "进度", "journey.unlockedDate": "解锁于 {date}", "journey.emptyUnlocked": "还没有解锁的成就", "journey.emptyLocked": "全部成就已解锁！", "journey.emptyAll": "未找到成就", "journey.emptyHintUnlocked": "开始探索视频，解锁你的第一枚成就勋章吧！", "journey.emptyHintLocked": "恭喜解锁全部成就！", "journey.emptyHintAll": "继续探索，发现更多隐藏惊喜！", "journey.weekdaySun": "日", "journey.weekdayMon": "一", "journey.weekdayTue": "二", "journey.weekdayWed": "三", "journey.weekdayThu": "四", "journey.weekdayFri": "五", "journey.weekdaySat": "六", "journey.ach_first_steps_title": "尝鲜第一口", "journey.ach_first_steps_desc": "观看你的第一个视频", "journey.ach_week_warrior_title": "连续赏味周达人", "journey.ach_week_warrior_desc": "保持连续 7 天赏味", "journey.ach_vocabulary_master_title": "零食大富翁", "journey.ach_vocabulary_master_desc": "装袋 100 个表达", "journey.ach_vocabulary_master_milestone": "还差 {n} 个表达！", "journey.ach_movie_buff_title": "阅片达人", "journey.ach_movie_buff_desc": "观看 50 个原版视频", "journey.ach_movie_buff_milestone": "还差 {n} 个视频！", "journey.ach_consistency_king_title": "满级咀嚼家", "journey.ach_consistency_king_desc": "保持连续 30 天赏味", "journey.ach_consistency_king_milestone": "还差 {n} 天！", "journey.ach_speed_learner_title": "速食王", "journey.ach_speed_learner_desc": "单日装袋 20 个表达", "journey.ach_speed_learner_milestone": "今天还差 {n} 个表达！", "journey.ach_language_explorer_title": "语言探索家", "journey.ach_language_explorer_desc": "累计学习 100 小时", "journey.ach_language_explorer_milestone": "还差 {n} 小时！", "journey.ach_perfect_week_title": "完美一周", "journey.ach_perfect_week_desc": "连续 7 天完成全部每日目标", "journey.ach_perfect_week_milestone": "还差 {n} 个完美日！", "journey.ach_early_bird_title": "早茶时间", "journey.ach_early_bird_desc": "累计 10 天在早上 9 点前赏味", "journey.ach_early_bird_milestone": "还差 {n} 个清晨！", "journey.ach_night_owl_title": "深夜夜宵王", "journey.ach_night_owl_desc": "累计 10 天在晚上 10 点后赏味", "journey.ach_night_owl_milestone": "还差 {n} 个夜晚！", "journey.ach_social_butterfly_title": "晒晒达人", "journey.ach_social_butterfly_desc": "分享你的学习进度 5 次", "journey.ach_social_butterfly_milestone": "还差 {n} 次晒晒！", "journey.ach_goal_crusher_title": "目标粉碎者", "journey.ach_goal_crusher_desc": "达成你的月度学习目标", "journey.ach_goal_crusher_milestone": "再完成 {n}% 即可达成目标！", "auth.welcomeBack": "欢迎回来", "auth.createAccount": "创建账户", "auth.email": "邮箱", "auth.password": "密码", "auth.username": "用户名", "auth.inviteCode": "邀请码", "auth.confirmPassword": "确认密码", "auth.logIn": "登录", "auth.loggingIn": "登录中…", "auth.createAccountBtn": "创建账户", "auth.creatingAccount": "创建中…", "auth.forgotPassword": "忘记密码？", "auth.createNewAccount": "创建新账户", "auth.alreadyHaveAccount": "已有账户？去登录", "auth.passwordPlaceholder": "密码（至少 8 位，含字母和数字）", "auth.agreeToPrivacy": "我同意<link>隐私政策<\/link>", "auth.errEmailRequired": "请输入邮箱", "auth.errEmailInvalid": "邮箱格式不正确", "auth.errPasswordRequired": "请输入密码", "auth.errPasswordLength6": "密码至少 6 位", "auth.errPasswordLength8": "密码至少 8 位", "auth.errPasswordFormat": "密码须同时包含字母和数字", "auth.errUsernameRequired": "请输入用户名", "auth.errInviteCodeRequired": "请输入邀请码", "auth.errInviteCodeInvalid": "邀请码无效。请检查是否输错或重新获取。", "auth.errConfirmMismatch": "两次密码不一致", "auth.errAgreeRequired": "需同意隐私政策才能继续", "auth.verificationPending": "你的邮箱尚未验证，部分功能可能受限。", "auth.verificationSent": "验证邮件已发送，请查看收件箱（和垃圾邮件文件夹）。", "auth.resendVerification": "重新发送验证邮件", "auth.sending": "发送中…", "auth.resetPasswordTitle": "重置密码", "auth.setNewPasswordTitle": "设置新密码", "auth.emailPlaceholder": "邮箱", "auth.errValidEmail": "请输入有效的邮箱", "auth.errRequestReset": "请求重置失败", "auth.resetSentDesc": "如果 <email>{email}<\/email> 对应的账户存在，我们已向该邮箱发送密码重置链接，请查看收件箱（和垃圾邮件文件夹）。", "auth.backToLogin": "返回登录", "auth.sendResetLink": "发送重置链接", "auth.newPasswordPlaceholder": "新密码（至少 8 位，含字母和数字）", "auth.confirmNewPasswordPlaceholder": "确认新密码", "auth.errResetFailed": "重置失败，链接可能已过期或无效。", "auth.resetTokenMissing": "缺少重置令牌。", "auth.requestNewResetLink": "申请新的重置链接", "auth.resetting": "重置中…", "auth.resetPasswordBtn": "重置密码", "auth.verifyEmailTitle": "验证邮箱", "auth.verifying": "正在验证你的邮箱…", "auth.verifySuccess": "你的邮箱已验证，现在可以登录了。", "auth.verifyTokenMissing": "缺少验证令牌。", "auth.verifyFailed": "验证失败，链接可能已过期或无效。", "auth.goToLogin": "前往登录", "auth.checkYourEmail": "请查收邮件", "auth.verificationLinkSent": "我们已向 {email} 发送验证链接。", "auth.verificationLinkSentNoEmail": "我们已发送验证链接。", "auth.clickLinkToVerify": "点击邮件中的链接以验证你的账户。", "auth.verificationResent": "验证邮件已重新发送，若仍未收到请查看垃圾邮件文件夹。", "auth.resendVerificationEmail": "重新发送验证邮件", "auth.errNoEmail": "无法确定你的邮箱，请重新登录。", "auth.errResendFailed": "重新发送失败", "auth.goToLoginLower": "前往登录", "profile.loginRequired": "你尚未登录。请<login>登录<\/login>或<signup>注册<\/signup>以保存你的设置。", "profile.home": "首页", "profile.myProfile": "我的资料", "profile.joined": "加入于 {date}", "profile.memberType": "{type} 会员", "profile.memberTypeWithExpiry": "{type} 会员 · 到期于 {date}", "profile.logOut": "退出登录", "profile.profileCompletion": "资料完成度", "profile.completeProfileHint": "设置学习目标、语言偏好并添加简介，让资料完成度达到 100%", "profile.learningStats": "学习统计", "profile.wordsLearned": "已嚼表达", "profile.videosWatched": "已看视频", "profile.currentStreak": "连续赏味", "profile.streakValue": "{n} 天", "profile.lastStudy": "上次学习", "profile.learningPreferences": "学习偏好", "profile.unsavedChanges": "你有未保存的修改，点「保存修改」以更新设置。", "profile.saving": "保存中…", "profile.saveChanges": "保存修改", "profile.noChanges": "无修改", "profile.settingsSaved": "设置保存成功！", "profile.saveFailed": "保存设置失败", "profile.learningGoal": "学习目标", "profile.learningGoalTooltip": "你的主要学习目标", "profile.languageLevel": "语言水平", "profile.languageLevelTooltip": "你目前的语言水平", "profile.levelA1": "A1 (初学者)", "profile.levelA2": "A2 (基础)", "profile.levelB1": "B1 (中级)", "profile.levelB2": "B2 (中高级)", "profile.levelC1": "C1 (高级)", "profile.levelC2": "C2 (精通)", "profile.testScore.title": "根据考试成绩设定等级", "profile.testScore.hintNewUser": "有四六级 / 雅思 / 托福成绩？一键映射到 CEFR 等级，精准起步。", "profile.testScore.testTypeLabel": "考试类型", "profile.testScore.scoreLabel": "分数", "profile.testScore.levelLabel": "等级", "profile.testScore.mappedLevel": "映射等级：<value>{level}<\/value>", "profile.testScore.applyButton": "应用到我的等级", "profile.testScore.recordedTitle": "已记录成绩", "profile.testScore.emptyRecorded": "还没有记录的成绩。", "profile.testScore.removeScore": "移除", "profile.testScore.reapplyScore": "重新应用", "profile.testScore.scoreOutOfRange": "分数超出该考试范围。", "profile.testScore.previewWaiting": "输入分数查看映射等级。", "profile.testScore.stagedBadge": "未保存", "profile.testScore.dismissHint": "关闭", "profile.testScore.levelSourceHint": "你的等级以你最近一次应用的考试成绩为准，下方列表为成绩存档。", "profile.testScore.cooldownHint": "等级每 7 天可改一次，距下次可改还有 {days} 天。", "profile.testScore.cooldownSaveBlocked": "等级变更处于 7 天冷却期，还需 {days} 天才能再次修改。", "profile.testType.cet4": "CET-4 大学英语四级", "profile.testType.cet6": "CET-6 大学英语六级", "profile.testType.ielts": "雅思 IELTS", "profile.testType.toefl": "托福 TOEFL iBT", "profile.testType.duolingo": "多邻国英语测试", "profile.testType.pte": "PTE Academic", "profile.testType.topik": "TOPIK", "profile.testType.hsk": "HSK", "profile.learningLanguage": "学习语言", "profile.learningLanguageTooltip": "你想学的语言", "profile.learningLanguageOption.english": "英语", "profile.learningLanguageOption.japanese": "日语", "profile.learningLanguageOption.korean": "韩语", "profile.learningLanguageOption.spanish": "西班牙语", "profile.learningLanguageOption.french": "法语", "profile.learningLanguageOption.german": "德语", "profile.learningLanguageOption.chinese": "中文", "profile.comingSoon": "即将上线", "profile.interfaceLanguage": "界面语言", "profile.interfaceLanguageTooltip": "你的母语，决定界面文字和讲解内容的语言", "profile.bio": "简介", "profile.bioTooltip": "介绍一下你自己和你的学习历程", "profile.bioPlaceholder": "用一句话介绍你自己…", "profile.bioCharCount": "{n}/200 字符", "profile.notificationSettings": "通知设置", "profile.dailyReminder": "每日学习提醒", "profile.weeklyReport": "每周进度报告", "profile.achievementAlerts": "成就提醒", "profile.accountSecurity": "账户安全", "profile.changePassword": "修改密码", "profile.verified": "已验证", "profile.unverified": "未验证", "profile.currentPassword": "当前密码", "profile.newPassword": "新密码", "profile.confirmNewPassword": "确认新密码", "profile.newPasswordPlaceholder": "至少 8 位，含字母和数字", "profile.passwordChanged": "密码已修改，请重新登录。", "profile.changing": "修改中…", "profile.passwordChangeHint": "为安全起见，修改密码会让你在所有设备退出登录。", "profile.errCurrentPassword": "请输入当前密码", "profile.errNewPasswordRequired": "请输入新密码", "profile.errNewPasswordLength": "密码至少 8 位", "profile.errNewPasswordFormat": "密码须同时包含字母和数字", "profile.errConfirmMismatch": "两次密码不一致", "profile.achievements": "成就", "profile.viewAll": "查看全部", "profile.showLess": "收起", "profile.unlocked": "已解锁", "profile.unlockedDate": "解锁于 {date}", "profile.progress": "进度", "profile.nextMilestone": "下一目标：{milestone}", "profile.share": "分享", "profile.shareTooltip": "分享此成就", "profile.confirmSaveTitle": "确认保存修改", "profile.confirmSaveDesc": "确定要保存所有修改吗？这将更新你的学习偏好和通知设置。", "profile.cancel": "取消", "watch.loading": "放映厅准备中…", "watch.failedToLoad": "视频加载失败：{error}", "watch.goBack": "返回", "watch.currentCaption": "当前字幕", "watch.freeNotes": "自由随笔", "watch.learningMaterials": "高光内容", "watch.tabExpressions": "地道表达", "watch.tabNotes": "笔记", "watch.tabExpressionNotes": "已嚼表达", "watch.tabSummary": "看点提要", "summary.title": "看点提要", "summary.retry": "重试", "summary.generate": "生成", "summary.regenerate": "重新生成", "summary.regenerateTooltip": "重新生成看点提要", "summary.empty": "还没有看点提要。点「生成」为这个视频创建一份。", "summary.generatedOn": "生成于 {date}", "notes.loading": "笔记加载中…", "notes.placeholder": "写一条灵感或记忆法…（Ctrl+Enter 添加）", "notes.anchorAt": "记录在这一刻 {time}", "notes.addNote": "添加笔记", "notes.addNoteTooltip": "添加此笔记（Ctrl+Enter）", "notes.empty": "还没有笔记，从上面开始添加吧。", "notes.cancel": "取消", "notes.cancelTooltip": "取消（Esc）", "notes.save": "保存", "notes.saveTooltip": "保存（Ctrl+Enter）", "notes.editTooltip": "编辑笔记", "notes.deleteTooltip": "删除笔记", "notes.jumpTo": "跳转到 {time}", "notes.noTimestamp": "无时间戳", "vocab.loading": "正在挑选合你胃口的地道表达…", "vocab.empty": "该视频暂无符合你胃口的表达", "vocab.emptyHint": "尝试多看一会儿视频，或在个人设置里检查你的语言水平。", "vocab.emptyHintError": "请稍后重试。", "vocab.inContext": "<label>语境释义：<\/label>{text}", "vocab.definition": "<label>定义：<\/label>{text}", "vocab.exampleLabel": "例句：", "vocab.exampleTranslation": "<label>译文：<\/label>{text}", "vocab.fromVideoLabel": "来自视频：", "vocab.whyLearnLabel": "为什么值得学：", "vocab.difficultyCheckLabel": "难度校验：", "vocab.assessed": "评估：{level}", "vocab.jumpTo": "跳转到 {time}", "vocab.markAsFamiliar": "彻底吃透", "vocab.alreadyFamiliar": "已吃透", "vocab.addToNotes": "加入笔记", "vocab.addedToNotes": "已加入笔记", "vocab.showLess": "收起", "vocab.showMore": "展开更多", "vocab.generating": "正在为你制作爆米花… 已准备好 {shown} 条", "vocab.degradedBanner": "有些表达没来得及准备好，点「重新制作」获取完整列表。", "vocab.regenerate": "重新制作", "vocab.regenerating": "重新制作中…", "vocab.markAsLearnable": "装进袋子", "vocab.cancelSave": "取消装袋", "vocab.cannotSaveNoId": "旧内容，无法装袋", "vocab.generatingNoSave": "快好了，稍等一下", "vocab.expressionNotesEmpty": "本视频的零食袋空空如也", "vocab.expressionNotesEmptyHint": "在「地道表达」标签页点「装进袋子」，把高光表达装进你的零食袋。", "vocab.expressionNotesCount": "本视频已装袋 {n} 个地道表达", "vocab.saved": "已装袋", "vocab.removeFromSaved": "取消装袋", "vocab.personalNoteLabel": "我的咀嚼心得：", "vocab.personalNotePlaceholder": "写下你的理解、记忆法或用法备注…", "history.continueWatching": "继续观看", "history.viewAll": "查看全部", "history.noPreview": "无预览", "history.untitledVideo": "（已删除视频）", "history.resumeFrom": "从 {time} 继续观看", "history.historyTitle": "观看历史", "history.historyCount": "{n} 条", "history.historyEmpty": "还没有观看记录", "history.historyEmptyHint": "去搜索页看几个视频，这里会按时间汇总你的观看进度。", "history.loadError": "历史加载失败", "history.loading": "加载中…", "history.loadMore": "加载更多", "history.agoDays": "{n} 天前", "history.agoHours": "{n} 小时前", "history.agoMinutes": "{n} 分钟前", "history.justNow": "刚刚", "history.historySubtitle": "你看过哪些视频、看到哪里，一目了然"}, "ko": {"common.tryAgain": "다시 시도", "common.retry": "다시 시도", "common.loading": "불러오는 중…", "common.cancel": "취소", "common.save": "저장", "common.back": "뒤로", "search.pageTitle": "동영상 검색", "search.placeholder": "오늘의 취향을 골라보세요…", "search.searchButton": "검색", "search.recentlyWatched": "최근 시청", "search.recommendedForYou": "오늘의 추천 맛", "search.error": "오류: {message}", "search.noResults": "동영상을 찾을 수 없어요", "nav.homepage": "홈", "nav.findVideos": "새로운 세상 탐험", "nav.myJourney": "음미하는 여정", "nav.myProfile": "내 프로필", "nav.logIn": "로그인", "nav.signUp": "회원가입", "nav.logOut": "로그아웃", "nav.home": "홈", "nav.searchVideos": "간식 찾기", "nav.backToTop": "맨 위로", "nav.goToHome": "홈으로", "nav.backToVideo": "영상으로", "nav.watchHistory": "시청 기록", "home.heroTitle": "원어민 표현을 맛보세요", "home.heroSubtitle": "좋아하는 유튜브 영상으로, 찐 현지 표현을 한 입씩 쏙쏙 소화해 보세요.", "home.startLearning": "맛보기 시작", "home.login": "로그인", "home.signUp": "회원가입", "home.continueLearning": "이어서 맛보기", "home.refresh": "새로고침", "home.refreshing": "새로고침 중…", "home.viewAll": "전체 보기", "home.noRecentVideos": "최근 시청한 동영상이 없어요", "home.yourLearningProgress": "나의 음미 진행도", "home.viewDetails": "자세히 보기", "home.wordsLearned": "맛본 표현", "home.videosWatched": "시청한 동영상", "home.currentStreak": "연속 음미", "home.streakValue": "{n}일", "home.lastStudy": "마지막 학습", "home.never": "아직 없음", "home.recommendedForYou": "오늘의 추천 맛", "home.findMore": "더 찾아보기", "home.noRecommendedVideos": "추천 동영상이 없어요", "home.featuresTitle": "Popcorn Language 기능", "home.featurePersonalizedTitle": "내 입맛에 맞게", "home.featurePersonalizedDesc": "실력에 맞춰 실시간으로 고르는 하이라이트 표현~ 난이도 고민 없이 쏙쏙 흡수돼요.", "home.featureInteractiveTitle": "보면서 씹기, 방해 없이", "home.featureInteractiveDesc": "무거운 사전 찾기는 그만. 원어 맥락 속에서 자연스럽게 원어민 표현을 주워 담아요.", "home.featureProgressTitle": "휴대용 간식 주머니", "home.featureProgressDesc": "탭 한 번으로 원어민 표현을 주워 담아요. 매일 흡수한 표현을 한눈에 추적하세요.", "home.ctaTitle": "언어 학습 여정을 시작할 준비됐나요?", "home.ctaDesc": "Popcorn Language에 가입하고 좋아하는 영상을 보며, 표현을 가볍게 주워 담고 천천히 음미해 보세요.", "journey.pageTitle": "음미하는 여정", "journey.pageSubtitle": "쏙쏙 골라 담은 표현들, 내 것으로 소화한 매 순간의 성장을 기록해요", "journey.dailyCheckInTitle": "매일 음미하는 출석체크", "journey.unknownError": "알 수 없는 오류", "journey.currentStreak": "연속 음미", "journey.streakValue": "{n}일", "journey.wordsLearned": "맛본 표현", "journey.videosWatched": "시청한 동영상", "journey.achievementsCount": "업적", "journey.achievementsRatio": "{unlocked}/{total}", "journey.tabCheckin": "매일 출석", "journey.tabAchievements": "업적", "journey.tabRecordBook": "간식 주머니", "journey.recordBookTitle": "나의 간식 주머니", "journey.recordBookCount": "원어민 표현 {n}개 주워 담음", "journey.recordBookDayCount": "{n}개", "journey.recordBookEmpty": "간식 주머니가 텅 비었어요~", "journey.recordBookEmptyHint": "영상 시청 중 「주워 담기」를 누르면 좋아하는 표현이 간식 주머니에 날짜별로 모여요.", "journey.personalNote": "<label>맛보기 메모:<\/label> {text}", "journey.jumpToVideo": "원래 영상으로 이동", "journey.openVideo": "동영상 열기", "journey.quickStats": "맛보기 통계", "journey.thisMonth": "이번 달", "journey.bestStreak": "최장 연속", "journey.totalStudyDays": "총 음미 일수", "journey.checkingIn": "출석 중…", "journey.alreadyCheckedIn": "오늘 이미 출석했어요!", "journey.checkInToday": "오늘 출석", "journey.loading": "불러오는 중…", "journey.daysThisMonth": "이번 달 일수", "journey.checkInSuccess": "✅ {message} - {streak}일 연속!", "journey.newAchievements": "🎉 새로 잠금 해제된 업적: {list}", "journey.checkInFailed": "출석 실패: {error}", "journey.loadCalendarFailed": "달력 불러오기 실패: {error}", "journey.failedToLoadAchievements": "업적 불러오기 실패", "journey.allUnlockedCongrats": "🎉 축하해요! 모든 업적을 잠금 해제했어요!", "journey.moreToUnlock": "잠금 해제할 업적이 {n}개 남았어요", "journey.filterAll": "전체 ({n})", "journey.filterUnlocked": "해제됨 ({n})", "journey.filterLocked": "미해제 ({n})", "journey.progress": "진행도", "journey.unlockedDate": "{date}에 해제됨", "journey.emptyUnlocked": "아직 해제한 업적이 없어요", "journey.emptyLocked": "모든 업적을 해제했어요!", "journey.emptyAll": "업적을 찾을 수 없어요", "journey.emptyHintUnlocked": "영상을 탐색하며 첫 업적을 잠금 해제하세요!", "journey.emptyHintLocked": "모든 업적 해제를 축하해요!", "journey.emptyHintAll": "계속 탐험하며 더 많은 업적을 발견하세요!", "journey.weekdaySun": "일", "journey.weekdayMon": "월", "journey.weekdayTue": "화", "journey.weekdayWed": "수", "journey.weekdayThu": "목", "journey.weekdayFri": "금", "journey.weekdaySat": "토", "journey.ach_first_steps_title": "첫 한 입", "journey.ach_first_steps_desc": "첫 동영상 시청", "journey.ach_week_warrior_title": "일주일의 미식가", "journey.ach_week_warrior_desc": "7일 연속 음미하기", "journey.ach_vocabulary_master_title": "간식계 만수르", "journey.ach_vocabulary_master_desc": "표현 100개 주워 담기", "journey.ach_vocabulary_master_milestone": "표현 {n}개 남았어요!", "journey.ach_movie_buff_title": "시청의 달인", "journey.ach_movie_buff_desc": "동영상 50개 시청", "journey.ach_movie_buff_milestone": "동영상 {n}개 남았어요!", "journey.ach_consistency_king_title": "30일 연속 간식 러버", "journey.ach_consistency_king_desc": "30일 연속 음미하기", "journey.ach_consistency_king_milestone": "{n}일 남았어요!", "journey.ach_speed_learner_title": "스피드 간식가", "journey.ach_speed_learner_desc": "하루에 표현 20개 주워 담기", "journey.ach_speed_learner_milestone": "오늘 표현 {n}개 남았어요!", "journey.ach_language_explorer_title": "언어 탐험가", "journey.ach_language_explorer_desc": "누적 100시간 학습", "journey.ach_language_explorer_milestone": "{n}시간 남았어요!", "journey.ach_perfect_week_title": "완벽한 일주일", "journey.ach_perfect_week_desc": "7일 연속 매일 목표 모두 달성", "journey.ach_perfect_week_milestone": "완벽한 날 {n}개 남았어요!", "journey.ach_early_bird_title": "모닝 커피 한 잔", "journey.ach_early_bird_desc": "아침 9시 전에 10일 음미하기", "journey.ach_early_bird_milestone": "아침 {n}번 더!", "journey.ach_night_owl_title": "심야 간식왕", "journey.ach_night_owl_desc": "밤 10시 이후에 10일 음미하기", "journey.ach_night_owl_milestone": "밤 {n}번 더!", "journey.ach_social_butterfly_title": "자랑꾼", "journey.ach_social_butterfly_desc": "학습 진행도 5번 자랑하기", "journey.ach_social_butterfly_milestone": "자랑하기 {n}번 더!", "journey.ach_goal_crusher_title": "목표 크러셔", "journey.ach_goal_crusher_desc": "월간 학습 목표 달성", "journey.ach_goal_crusher_milestone": "목표까지 {n}% 남았어요!", "auth.welcomeBack": "다시 오신 것을 환영해요", "auth.createAccount": "계정 만들기", "auth.email": "이메일", "auth.password": "비밀번호", "auth.username": "사용자 이름", "auth.inviteCode": "초대 코드", "auth.confirmPassword": "비밀번호 확인", "auth.logIn": "로그인", "auth.loggingIn": "로그인 중…", "auth.createAccountBtn": "계정 만들기", "auth.creatingAccount": "만드는 중…", "auth.forgotPassword": "비밀번호를 잊으셨나요?", "auth.createNewAccount": "새 계정 만들기", "auth.alreadyHaveAccount": "이미 계정이 있나요? 로그인", "auth.passwordPlaceholder": "비밀번호 (최소 8자, 문자와 숫자 포함)", "auth.agreeToPrivacy": "<link>개인정보 처리방침<\/link>에 동의합니다", "auth.errEmailRequired": "이메일을 입력하세요", "auth.errEmailInvalid": "이메일 형식이 올바르지 않아요", "auth.errPasswordRequired": "비밀번호를 입력하세요", "auth.errPasswordLength6": "비밀번호는 최소 6자여야 해요", "auth.errPasswordLength8": "비밀번호는 최소 8자여야 해요", "auth.errPasswordFormat": "비밀번호는 문자와 숫자를 모두 포함해야 해요", "auth.errUsernameRequired": "사용자 이름을 입력하세요", "auth.errInviteCodeRequired": "초대 코드를 입력하세요", "auth.errInviteCodeInvalid": "초대 코드가 맞지 않아요. 오타가 없는지 확인하거나 새 코드를 요청하세요.", "auth.errConfirmMismatch": "두 비밀번호가 일치하지 않아요", "auth.errAgreeRequired": "개인정보 처리방침에 동의해야 계속할 수 있어요", "auth.verificationPending": "이메일 인증이 완료되지 않아 일부 기능이 제한될 수 있어요.", "auth.verificationSent": "인증 메일을 보냈어요. 받은편지함(및 스팸함)을 확인하세요.", "auth.resendVerification": "인증 메일 다시 보내기", "auth.sending": "보내는 중…", "auth.resetPasswordTitle": "비밀번호 재설정", "auth.setNewPasswordTitle": "새 비밀번호 설정", "auth.emailPlaceholder": "이메일", "auth.errValidEmail": "유효한 이메일을 입력하세요", "auth.errRequestReset": "재설정 요청 실패", "auth.resetSentDesc": "<email>{email}<\/email>에 해당하는 계정이 있으면, 해당 이메일로 비밀번호 재설정 링크를 보냈어요. 받은편지함(및 스팸함)을 확인하세요.", "auth.backToLogin": "로그인으로 돌아가기", "auth.sendResetLink": "재설정 링크 보내기", "auth.newPasswordPlaceholder": "새 비밀번호 (최소 8자, 문자와 숫자 포함)", "auth.confirmNewPasswordPlaceholder": "새 비밀번호 확인", "auth.errResetFailed": "재설정 실패. 링크가 만료되었거나 유효하지 않을 수 있어요.", "auth.resetTokenMissing": "재설정 토큰이 없어요.", "auth.requestNewResetLink": "새 재설정 링크 요청", "auth.resetting": "재설정 중…", "auth.resetPasswordBtn": "비밀번호 재설정", "auth.verifyEmailTitle": "이메일 인증", "auth.verifying": "이메일 인증 중…", "auth.verifySuccess": "이메일이 인증되었어요. 이제 로그인할 수 있어요.", "auth.verifyTokenMissing": "인증 토큰이 없어요.", "auth.verifyFailed": "인증 실패. 링크가 만료되었거나 유효하지 않을 수 있어요.", "auth.goToLogin": "로그인하러 가기", "auth.checkYourEmail": "메일을 확인하세요", "auth.verificationLinkSent": "{email}로 인증 링크를 보냈어요.", "auth.verificationLinkSentNoEmail": "인증 링크를 보냈어요.", "auth.clickLinkToVerify": "메일의 링크를 눌러 계정을 인증하세요.", "auth.verificationResent": "인증 메일을 다시 보냈어요. 받지 못했다면 스팸함을 확인하세요.", "auth.resendVerificationEmail": "인증 메일 다시 보내기", "auth.errNoEmail": "이메일을 확인할 수 없어요. 다시 로그인하세요.", "auth.errResendFailed": "다시 보내기 실패", "auth.goToLoginLower": "로그인하러 가기", "profile.loginRequired": "로그인되어 있지 않아요. 설정을 저장하려면 <login>로그인<\/login>하거나 <signup>회원가입<\/signup>하세요.", "profile.home": "홈", "profile.myProfile": "내 프로필", "profile.joined": "{date}에 가입", "profile.memberType": "{type} 멤버", "profile.memberTypeWithExpiry": "{type} 멤버 · {date}에 만료", "profile.logOut": "로그아웃", "profile.profileCompletion": "프로필 완성도", "profile.completeProfileHint": "학습 목표, 언어 설정, 소개를 추가해 프로필 완성도를 100%로 만들어 보세요", "profile.learningStats": "학습 통계", "profile.wordsLearned": "맛본 표현", "profile.videosWatched": "시청한 동영상", "profile.currentStreak": "연속 음미", "profile.streakValue": "{n}일", "profile.lastStudy": "마지막 학습", "profile.learningPreferences": "학습 환경설정", "profile.unsavedChanges": "저장하지 않은 수정이 있어요. 「수정 저장」을 눌러 설정을 업데이트하세요.", "profile.saving": "저장 중…", "profile.saveChanges": "수정 저장", "profile.noChanges": "변경사항 없음", "profile.settingsSaved": "설정이 저장되었어요!", "profile.saveFailed": "설정 저장 실패", "profile.learningGoal": "학습 목표", "profile.learningGoalTooltip": "주요 학습 목표", "profile.languageLevel": "언어 수준", "profile.languageLevelTooltip": "현재 언어 수준", "profile.levelA1": "A1 (초급)", "profile.levelA2": "A2 (초중급)", "profile.levelB1": "B1 (중급)", "profile.levelB2": "B2 (중고급)", "profile.levelC1": "C1 (고급)", "profile.levelC2": "C2 (최고급)", "profile.testScore.title": "시험 점수로 레벨 설정", "profile.testScore.hintNewUser": "CET / IELTS / TOEFL 점수가 있나요? CEFR 레벨로 매핑해 정확하게 시작하세요.", "profile.testScore.testTypeLabel": "시험 종류", "profile.testScore.scoreLabel": "점수", "profile.testScore.levelLabel": "등급", "profile.testScore.mappedLevel": "매핑 레벨: <value>{level}<\/value>", "profile.testScore.applyButton": "내 레벨에 적용", "profile.testScore.recordedTitle": "기록된 점수", "profile.testScore.emptyRecorded": "아직 기록된 점수가 없어요.", "profile.testScore.removeScore": "삭제", "profile.testScore.reapplyScore": "다시 적용", "profile.testScore.scoreOutOfRange": "점수가 이 시험의 범위를 벗어났어요.", "profile.testScore.previewWaiting": "점수를 입력하면 매핑 레벨이 표시돼요.", "profile.testScore.stagedBadge": "미저장", "profile.testScore.dismissHint": "닫기", "profile.testScore.levelSourceHint": "레벨은 가장 최근에 적용한 시험 점수를 따라요. 아래 목록은 점수 보관함이에요.", "profile.testScore.cooldownHint": "레벨 변경은 7일에 1회로 제한돼요. {days}일 후에 다시 변경할 수 있어요.", "profile.testScore.cooldownSaveBlocked": "레벨 변경이 7일 쿨다운 중이에요. {days}일 후에 다시 시도하세요.", "profile.testType.cet4": "CET-4", "profile.testType.cet6": "CET-6", "profile.testType.ielts": "IELTS", "profile.testType.toefl": "TOEFL iBT", "profile.testType.duolingo": "Duolingo English Test", "profile.testType.pte": "PTE Academic", "profile.testType.topik": "TOPIK", "profile.testType.hsk": "HSK", "profile.learningLanguage": "학습 언어", "profile.learningLanguageTooltip": "배우고 싶은 언어", "profile.learningLanguageOption.english": "영어", "profile.learningLanguageOption.japanese": "일본어", "profile.learningLanguageOption.korean": "한국어", "profile.learningLanguageOption.spanish": "스페인어", "profile.learningLanguageOption.french": "프랑스어", "profile.learningLanguageOption.german": "독일어", "profile.learningLanguageOption.chinese": "중국어", "profile.comingSoon": "출시 예정", "profile.interfaceLanguage": "인터페이스 언어", "profile.interfaceLanguageTooltip": "모국어. 인터페이스 문안과 해설 콘텐츠의 언어를 결정해요.", "profile.bio": "소개", "profile.bioTooltip": "내 스토리 적기", "profile.bioPlaceholder": "나를 한 줄로 표현한다면?", "profile.bioCharCount": "{n}/200자", "profile.notificationSettings": "알림 설정", "profile.dailyReminder": "매일 학습 알림", "profile.weeklyReport": "주간 진행 보고", "profile.achievementAlerts": "업적 알림", "profile.accountSecurity": "계정 보안", "profile.changePassword": "비밀번호 변경", "profile.verified": "인증됨", "profile.unverified": "미인증", "profile.currentPassword": "현재 비밀번호", "profile.newPassword": "새 비밀번호", "profile.confirmNewPassword": "새 비밀번호 확인", "profile.newPasswordPlaceholder": "최소 8자, 문자와 숫자 포함", "profile.passwordChanged": "비밀번호가 변경되었어요. 다시 로그인하세요.", "profile.changing": "변경 중…", "profile.passwordChangeHint": "보안을 위해 비밀번호 변경 시 모든 기기에서 로그아웃돼요.", "profile.errCurrentPassword": "현재 비밀번호를 입력하세요", "profile.errNewPasswordRequired": "새 비밀번호를 입력하세요", "profile.errNewPasswordLength": "비밀번호는 최소 8자여야 해요", "profile.errNewPasswordFormat": "비밀번호는 문자와 숫자를 모두 포함해야 해요", "profile.errConfirmMismatch": "두 비밀번호가 일치하지 않아요", "profile.achievements": "업적", "profile.viewAll": "전체 보기", "profile.showLess": "접기", "profile.unlocked": "해제됨", "profile.unlockedDate": "{date}에 해제됨", "profile.progress": "진행도", "profile.nextMilestone": "다음 목표: {milestone}", "profile.share": "공유", "profile.shareTooltip": "이 업적 공유", "profile.confirmSaveTitle": "수정 저장 확인", "profile.confirmSaveDesc": "모든 수정을 저장할까요? 학습 환경설정과 알림 설정이 업데이트돼요.", "profile.cancel": "취소", "watch.loading": "상영관 준비 중…", "watch.failedToLoad": "동영상 불러오기 실패: {error}", "watch.goBack": "뒤로", "watch.currentCaption": "현재 자막", "watch.freeNotes": "자유 노트", "watch.learningMaterials": "하이라이트", "watch.tabExpressions": "원어민 표현", "watch.tabNotes": "노트", "watch.tabExpressionNotes": "맛본 표현", "watch.tabSummary": "하이라이트 요약", "summary.title": "하이라이트 요약", "summary.retry": "다시 시도", "summary.generate": "생성", "summary.regenerate": "다시 생성", "summary.regenerateTooltip": "하이라이트 요약 다시 생성", "summary.empty": "요약이 없어요. 이 동영상의 하이라이트 요약을 만들려면 「생성」을 누르세요.", "summary.generatedOn": "{date}에 생성됨", "notes.loading": "노트 불러오는 중…", "notes.placeholder": "영감이나 암기법을 적어보세요… (Ctrl+Enter로 추가)", "notes.anchorAt": "{time}에 기록", "notes.addNote": "노트 추가", "notes.addNoteTooltip": "이 노트 추가 (Ctrl+Enter)", "notes.empty": "아직 노트가 없어요. 위에서 추가해 보세요.", "notes.cancel": "취소", "notes.cancelTooltip": "취소 (Esc)", "notes.save": "저장", "notes.saveTooltip": "저장 (Ctrl+Enter)", "notes.editTooltip": "노트 편집", "notes.deleteTooltip": "노트 삭제", "notes.jumpTo": "{time}로 이동", "notes.noTimestamp": "타임스탬프 없음", "vocab.loading": "입맛에 맞는 원어민 표현을 골라 드리는 중…", "vocab.empty": "이 동영상에는 입맛에 맞는 표현이 아직 없어요", "vocab.emptyHint": "동영상을 조금 더 시청해 보거나, 프로필 설정에서 언어 수준을 확인해 보세요.", "vocab.emptyHintError": "잠시 후 다시 시도하세요.", "vocab.inContext": "<label>문맥 속 뜻:<\/label> {text}", "vocab.definition": "<label>정의:<\/label> {text}", "vocab.exampleLabel": "예문:", "vocab.exampleTranslation": "<label>해석:<\/label> {text}", "vocab.fromVideoLabel": "출처 동영상:", "vocab.whyLearnLabel": "왜 배울 가치가 있는지:", "vocab.difficultyCheckLabel": "난이도 검증:", "vocab.assessed": "평가: {level}", "vocab.jumpTo": "{time}로 이동", "vocab.markAsFamiliar": "완전히 소화됨", "vocab.alreadyFamiliar": "소화됨", "vocab.addToNotes": "노트에 추가", "vocab.addedToNotes": "노트에 추가됨", "vocab.showLess": "접기", "vocab.showMore": "더 펼치기", "vocab.generating": "팝콘을 튀기는 중… {shown}개 준비됐어요", "vocab.degradedBanner": "일부 표현이 제때 준비되지 못해 「다시 만들기」로 다시 준비해 드려요.", "vocab.regenerate": "다시 만들기", "vocab.regenerating": "다시 만드는 중…", "vocab.markAsLearnable": "주워 담기", "vocab.cancelSave": "주머니에서 꺼내기", "vocab.cannotSaveNoId": "예전 표현이라 주워 담을 수 없어요.", "vocab.generatingNoSave": "거의 다 됐어요. 잠시 후 주워 담을 수 있어요.", "vocab.expressionNotesEmpty": "이 동영상의 간식 주머니가 텅 비었어요", "vocab.expressionNotesEmptyHint": "「원어민 표현」 탭에서 「주워 담기」를 눌러 하이라이트 표현을 간식 주머니에 담으세요.", "vocab.expressionNotesCount": "이 동영상에 주워 담은 원어민 표현 {n}개", "vocab.saved": "주워 담음", "vocab.removeFromSaved": "주머니에서 꺼내기", "vocab.personalNoteLabel": "나의 맛보기 메모:", "vocab.personalNotePlaceholder": "이해, 암기법, 용법 메모를 적어보세요…", "history.continueWatching": "이어보기", "history.viewAll": "전체 보기", "history.noPreview": "미리보기 없음", "history.untitledVideo": "(삭제된 영상)", "history.resumeFrom": "{time}부터 이어보기", "history.historyTitle": "시청 기록", "history.historyCount": "{n}개", "history.historyEmpty": "시청 기록이 없어요", "history.historyEmptyHint": "검색 페이지에서 영상을 시청하면 진행률이 여기에 표시돼요.", "history.loadError": "기록을 불러오지 못했어요", "history.loading": "불러오는 중…", "history.loadMore": "더 보기", "history.agoDays": "{n}일 전", "history.agoHours": "{n}시간 전", "history.agoMinutes": "{n}분 전", "history.justNow": "방금", "history.historySubtitle": "어떤 영상을 얼마나 시청했는지 한눈에"}};
+
+const ITEMS = [
+  { term: "pull it off", level: "B2",
+    eg: "Nobody thought she could pull it off, but she did.",
+    en: { sense: "to succeed at something difficult", tr: "", why: "Common in casual speech when something hard works out. It sounds more natural than \"succeed\"." },
+    zh: { sense: "成功做到（原本很难的事）", tr: "没人觉得她能办到，但她做到了。", why: "口语里讲经历、夸人时非常常用，比 succeed 自然得多。" },
+    ko: { sense: "(어려운 일을) 해내다", tr: "아무도 그녀가 해낼 거라고 생각하지 않았지만, 그녀는 해냈어요.", why: "어려운 일을 해냈을 때 일상 대화에서 자주 써요. succeed보다 훨씬 자연스러워요." } },
+  { term: "hit or miss", level: "B2",
+    eg: "The food at that place is hit or miss.",
+    en: { sense: "sometimes good, sometimes bad" },
+    zh: { sense: "时好时坏，全看运气" },
+    ko: { sense: "잘될 때도 있고 안될 때도 있다, 복불복이다" } },
+  { term: "I'm down", level: "B1",
+    eg: "Pizza tonight? I'm down.",
+    en: { sense: "I'd like to join in" },
+    zh: { sense: "我愿意，算我一个" },
+    ko: { sense: "나도 좋아, 나도 할래" } }
+];
+
+const IELTS = [["4.0","A2"],["4.5","B1"],["5.0","B1"],["5.5","B2"],["6.0","B2"],["6.5","B2"],["7.0","C1"],["7.5","C1"],["8.0","C1"],["8.5","C2"],["9.0","C2"]];
+
+const DIAL = [
+  { on: 3, label: "Full", rule: "Name the action, the place and the wait in snack terms. This is where the mood is set.",
+    keys: ["vocab.markAsLearnable", "vocab.loading", "journey.recordBookEmptyHint"] },
+  { on: 1, label: "Light", rule: "One snack word at most, and only when the destination stays obvious. Utility labels stay plain.",
+    keys: ["nav.myJourney", "journey.tabRecordBook", "nav.watchHistory", "history.continueWatching"] },
+  { on: 0, label: "None", rule: "Passwords, email and sign-out use the words every other product uses.",
+    keys: ["auth.forgotPassword", "profile.passwordChangeHint", "auth.verificationSent"] },
+  { on: 0, label: "None", rule: "Say what went wrong and what to do next. A joke here reads as not taking the problem seriously.",
+    keys: ["auth.errResetFailed", "profile.testScore.scoreOutOfRange", "auth.verifyFailed"] }
+];
+
+// Wording of the wait panel before the rewrite, taken from the repository history.
+const OLD = {
+  en: { generating: "Popping your popcorn… {shown} shown / {ready} validated", chunk: "chunk {done}/{total}",
+        degradedBanner: "Some content is fallback-generated (generation timed out / partially failed). Click regenerate for full results.",
+        regenerate: "Remake", generatingNoSave: "Available to bag once generation finishes", cancelSave: "Click to unbag" },
+  zh: { generating: "正在为你制作爆米花… 已展示 {shown} / 已校验 {ready}", chunk: "分块 {done}/{total}",
+        degradedBanner: "部分内容为兜底生成（生成超时/部分失败），点重新生成获取完整结果",
+        regenerate: "重新制作", generatingNoSave: "生成完成后即可装袋", cancelSave: "点击取出零食" },
+  ko: { generating: "팝콘을 튀기는 중… 표시 {shown} / 검증 {ready}", chunk: "청크 {done}/{total}",
+        degradedBanner: "일부 콘텐츠는 폴백으로 생성되었어요 (생성 시간 초과/일부 실패). 전체 결과를 받으려면 다시 만들기를 누르세요",
+        regenerate: "다시 만들기", generatingNoSave: "생성이 완료되면 주워 담을 수 있어요", cancelSave: "저장됨 — 클릭하여 꺼내기" }
+};
+
+const state = { loc: "en", step: 0, wait: "gen", copy: "new", bagged: new Set([0]), dial: 0, score: "6.5", inv: "ok" };
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+// The product's messages are ICU MessageFormat. This covers the subset used on this page:
+// {name}, {name, plural, one {…} other {…}} with #, and <tag>…</tag>.
+const fmt = (m, v = {}) => String(m)
+  .replace(/\{(\w+), plural, one \{([^{}]*)\} other \{([^{}]*)\}\}/g, (_, p, one, other) => (Number(v[p]) === 1 ? one : other).replace(/#/g, v[p]))
+  .replace(/\{(\w+)\}/g, (all, p) => (p in v ? v[p] : all));
+const msg = (k) => (S[state.loc] && S[state.loc][k]) ?? k;
+const t = (k, v) => fmt(msg(k), v).replace(/<\/?\w+>/g, "");
+// Like t(), but a tagged part becomes a span with the class given for that tag.
+function rich(k, v, cls) {
+  const s = fmt(msg(k), v), frag = document.createDocumentFragment();
+  let last = 0;
+  for (const m of s.matchAll(/<(\w+)>(.*?)<\/\1>/g)) {
+    if (m.index > last) frag.append(s.slice(last, m.index));
+    frag.append(el("span", cls[m[1]] || "", m[2]));
+    last = m.index + m[0].length;
+  }
+  if (last < s.length) frag.append(s.slice(last));
+  return frag;
+}
+// Wait-panel strings in either version.
+const wt = (k, v) => (state.copy === "old" ? fmt(OLD[state.loc][k], v) : t("vocab." + k, v));
+const press = (sel, attr, val) => $$(sel).forEach((b) => b.setAttribute("aria-pressed", String(b.dataset[attr] === String(val))));
+
+function card(i, opts) {
+  const it = ITEMS[i], l = it[state.loc];
+  const c = el("div", "card");
+  const head = el("div", "x-head");
+  const left = el("div");
+  const line = el("div", "row");
+  line.append(el("span", "x-term", it.term), el("span", "pill", it.level));
+  left.append(line);
+  const sense = el("div"); sense.style.marginTop = "6px";
+  sense.append(rich("vocab.inContext", { text: l.sense }, { label: "x-lab" }));
+  left.append(sense);
+  head.append(left);
+  const b = el("button", "bag"); b.type = "button";
+  if (opts.locked) { b.disabled = true; b.textContent = wt("generatingNoSave"); }
+  else {
+    const on = state.bagged.has(i);
+    b.setAttribute("aria-pressed", String(on));
+    b.textContent = on ? (opts.wait ? wt("cancelSave") : t("vocab.cancelSave")) : t("vocab.markAsLearnable");
+    b.addEventListener("click", () => { on ? state.bagged.delete(i) : state.bagged.add(i); render(); });
+  }
+  head.append(b);
+  c.append(head);
+  if (opts.full && l.why) {
+    const eg = el("div"); eg.style.marginTop = "10px";
+    eg.append(el("div", "x-lab", t("vocab.exampleLabel")), el("div", "x-eg", it.eg));
+    if (l.tr) { const tr = el("div", "hint"); tr.style.marginTop = "4px"; tr.append(rich("vocab.exampleTranslation", { text: l.tr }, { label: "x-b" })); eg.append(tr); }
+    const why = el("div"); why.style.marginTop = "10px";
+    why.append(el("div", "x-lab", t("vocab.whyLearnLabel")), el("div", null, l.why));
+    c.append(eg, why);
+  }
+  return c;
+}
+
+function skeleton() {
+  const c = el("div", "card");
+  ["38%", "24%", "100%"].forEach((w) => { const s = el("div", "skel"); s.style.width = w; c.append(s); });
+  return c;
+}
+
+function render() {
+  $$(".stage .ui").forEach((u) => u.setAttribute("lang", state.loc === "zh" ? "zh-Hans" : state.loc));
+  $$("[data-k]").forEach((e) => { e.textContent = t(e.dataset.k); });
+  press("[data-loc]", "loc", state.loc);
+
+  // journey
+  $$("[data-step]").forEach((b) => b.setAttribute("aria-selected", String(+b.dataset.step === state.step)));
+  $$("[data-pane]").forEach((p) => { p.hidden = +p.dataset.pane !== state.step; });
+  $("#prev").disabled = state.step === 0;
+  $("#next").disabled = state.step === 5;
+
+  // invite code
+  press("[data-inv]", "inv", state.inv);
+  const badCode = state.inv === "bad";
+  $("#inv-field").textContent = badCode ? "nuspopcron" : "nuspopcorn";
+  $("#inv-field").classList.toggle("bad", badCode);
+  $("#inv-err").hidden = !badCode;
+
+  // level mapper
+  const lvl = (IELTS.find((r) => r[0] === state.score) || IELTS[5])[1];
+  $("#mapped").replaceChildren(rich("profile.testScore.mappedLevel", { level: t("profile.level" + lvl) }, { value: "pill" }));
+  $("#cooldown").textContent = t("profile.testScore.cooldownHint", { days: 5 });
+
+  // wait
+  press("[data-wait]", "wait", state.wait);
+  press("[data-copy]", "copy", state.copy);
+  const gen = state.wait === "gen";
+  $("#gen-bar").hidden = !gen;
+  $("#short-banner").hidden = gen;
+  $("#gen-text").textContent = wt("generating", { shown: 6, ready: 9 });
+  $("#gen-chunk").textContent = state.copy === "old" ? wt("chunk", { done: 2, total: 5 }) : "";
+  $("#short-text").textContent = wt("degradedBanner");
+  $("#short-btn").textContent = wt("regenerate");
+  const wc = $("#wait-cards"); wc.replaceChildren();
+  if (gen) wc.append(card(0, { locked: true }), skeleton(), skeleton());
+  else wc.append(card(0, { wait: true }), card(1, { wait: true }));
+
+  // bag
+  const bc = $("#bag-cards"); bc.replaceChildren();
+  ITEMS.forEach((_, i) => bc.append(card(i, { full: i === 0 })));
+  const n = state.bagged.size;
+  $("#bag-count").textContent = t("vocab.expressionNotesCount", { n });
+
+  // pouch
+  $("#st-streak").textContent = t("journey.streakValue", { n: 3 });
+  $("#st-saved").textContent = n;
+  const pouch = $("#pouch"); pouch.replaceChildren();
+  if (!n) {
+    const e = el("div", "card empty");
+    e.append(el("b", null, t("journey.recordBookEmpty")), el("span", "sub", t("journey.recordBookEmptyHint")));
+    pouch.append(e);
+  } else {
+    const box = el("div"); box.style.cssText = "display:flex;flex-direction:column;gap:10px";
+    const h = el("div"); h.append(el("h4", null, t("journey.recordBookTitle")), el("div", "sub", t("journey.recordBookCount", { n })));
+    box.append(h);
+    [...state.bagged].sort().forEach((i) => {
+      const c = el("div", "card");
+      const row = el("div", "row"); row.append(el("span", "x-term", ITEMS[i].term), el("span", "pill", ITEMS[i].level));
+      c.append(row, el("div", "sub", ITEMS[i][state.loc].sense));
+      const j = el("div", "hint", t("journey.jumpToVideo")); j.style.cssText = "margin-top:6px;color:var(--ui-blue)";
+      c.append(j); box.append(c);
+    });
+    pouch.append(box);
+  }
+
+  // dial
+  press("[data-dial]", "dial", state.dial);
+  const d = DIAL[state.dial];
+  $$("#meter i").forEach((m, i) => m.classList.toggle("on", i < d.on));
+  $("#dial-label").textContent = d.label;
+  $("#dial-rule").textContent = d.rule;
+  const ds = $("#dial-samples"); ds.replaceChildren();
+  d.keys.forEach((k) => { const li = el("li"); li.append(el("span", null, t(k)), el("span", "key", k)); ds.append(li); });
+
+}
+
+function start() {
+  const sel = $("#test-score");
+  IELTS.forEach((r) => { const o = el("option", null, r[0]); o.value = r[0]; sel.append(o); });
+  sel.value = state.score;
+  sel.addEventListener("change", () => { state.score = sel.value; render(); });
+
+  const bind = (sel2, attr, key, cast) => $$(sel2).forEach((b) => b.addEventListener("click", () => { state[key] = cast ? cast(b.dataset[attr]) : b.dataset[attr]; render(); }));
+  bind("[data-loc]", "loc", "loc");
+  bind("[data-step]", "step", "step", Number);
+  bind("[data-wait]", "wait", "wait");
+  bind("[data-dial]", "dial", "dial", Number);
+  bind("[data-inv]", "inv", "inv");
+  bind("[data-copy]", "copy", "copy");
+  $("#prev").addEventListener("click", () => { state.step = Math.max(0, state.step - 1); render(); });
+  $("#next").addEventListener("click", () => { state.step = Math.min(5, state.step + 1); render(); });
+  render();
+}
+start();
+</script>
+
+</html>
